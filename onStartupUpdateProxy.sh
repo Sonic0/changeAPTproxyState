@@ -20,21 +20,13 @@ ProxyConfFile="/etc/apt/apt.conf" #Tested on Ubuntu18.10
 
 function activeOrDeactiveProxy () {
     lineOfAptConf=`sed 's/^\(.\).*/\1/' $ProxyConfFile`
-    
-    # Proprio brutta sta cosa che segue, da cambiare!
-    # DOvrebbe essere una funzione a parte che controlla bene tutte le righe se sono commentate
-    # In base a questo poi si può migliorare il resto
-    if [ "${#lineOfAptConf}" == "5" ] || [ "${#lineOfAptConf}" > "5" ]; then
-        isJustDeactive=0
-    fi
 
     if [ $amIInCompanyNetwork == 0 ] ; then
         
         sed -i 's .  ' $ProxyConfFile
         echo "Proxy for APT is activated" # Remove "#" to the beginning of each line 
-    elif [ $isJustDeactive == 0 ]; then
-            echo "Actually APT proxy is just deactivated"
-            return
+    elif [ $amIInCompanyNetwork == 1 ]; then
+    
         sed -i 's/^/#/' $ProxyConfFile # Add "#" to the beginning of each line
         echo "Proxy for APT is disactivated"
     else
