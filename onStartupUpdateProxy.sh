@@ -18,21 +18,6 @@ ProxyConfFile="/etc/apt/apt.conf" #Tested on Ubuntu18.10
 #networkProtocols=( http https ftp )
 #networkPorts=( 8080 )
 
-function isCompanyNetwork () {
-    myNetwork=`hostname -I | awk -F '.' '{print $1"."$2}'`
-
-    echo "My network $myNetwork.X.X and the network $companyNetwork.X.X are "
-    [ $myNetwork == $companyNetwork ] && echo "In the same network"; echo "Not in the same network"
-
-    if [[ $myNetwork == $companyNetwork ]]; then
-        echo "I am in my company's network, active proxy"
-        amIInCompanyNetwork=0
-    else
-        echo "I'm in a Private network, deactive proxy"
-        amIInCompanyNetwork=1
-    fi
-}
-
 function activeOrDeactiveProxy () {
     lineOfAptConf=`sed 's/^\(.\).*/\1/' $ProxyConfFile`
     
@@ -55,7 +40,22 @@ function activeOrDeactiveProxy () {
     else
         echo "Error. Set proxy manually"
     fi
-}   
+}
+
+function isCompanyNetwork () {
+    myNetwork=`hostname -I | awk -F '.' '{print $1"."$2}'`
+
+    echo "My network $myNetwork.X.X and the network $companyNetwork.X.X are "
+    [ $myNetwork == $companyNetwork ] && echo "In the same network"; echo "Not in the same network"
+
+    if [[ $myNetwork == $companyNetwork ]]; then
+        echo "I am in my company's network, active proxy"
+        amIInCompanyNetwork=0
+    else
+        echo "I'm in a Private network, deactive proxy"
+        amIInCompanyNetwork=1
+    fi
+}
 
 #-------- MAIN -------#
 
