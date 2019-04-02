@@ -26,7 +26,7 @@ function activeOrDeactiveProxy () {
         sed -i 's .  ' $ProxyConfFile
         echo "Proxy for APT is activated" # Remove "#" to the beginning of each line 
     elif [ $amIInCompanyNetwork == 1 ]; then
-    
+
         sed -i 's/^/#/' $ProxyConfFile # Add "#" to the beginning of each line
         echo "Proxy for APT is disactivated"
     else
@@ -56,8 +56,6 @@ if [ `whoami` != 'root' ]; then
     echo "Must be root to run $0"
     exit 1;
 fi
-
-echo "Good, you are root to execute $0"
 # Shorted version of root check
 #[ "$(whoami)" != 'root' ] && ( echo Must be root to run $0; exit 1 )
 
