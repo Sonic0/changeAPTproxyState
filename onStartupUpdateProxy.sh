@@ -12,22 +12,22 @@
 
 companyNetwork=$1
 amIInCompanyNetwork=1
-ProxyConfFile="/etc/apt/apt.conf" #Tested on Ubuntu18.10
-
+proxyConfFile="/etc/apt/apt.conf" #Tested on Ubuntu18.10
+proxyUrl="proxy.reply.it"
 # Change values below based on your proxy setup
 #networkProtocols=( http https ftp )
-#networkPorts=( 8080 )
+proxyPorts=( 8080 )
+
 
 function activeOrDeactiveProxy () {
-    lineOfAptConf=`sed 's/^\(.\).*/\1/' $ProxyConfFile`
 
     if [ $amIInCompanyNetwork == 0 ] ; then
         
-        sed -i 's .  ' $ProxyConfFile
+        sed -i 's .  ' $proxyConfFile
         echo "Proxy for APT is activated" # Remove "#" to the beginning of each line 
     elif [ $amIInCompanyNetwork == 1 ]; then
 
-        sed -i 's/^/#/' $ProxyConfFile # Add "#" to the beginning of each line
+        sed -i 's/^/#/' $proxyConfFile # Add "#" to the beginning of each line
         echo "Proxy for APT is disactivated"
     else
         echo "Error. Set proxy manually"
@@ -59,10 +59,11 @@ fi
 # Shorted version of root check
 #[ "$(whoami)" != 'root' ] && ( echo Must be root to run $0; exit 1 )
 
-if [ -s $ProxyConfFile ]; then
-    echo "Great, the APT proxy configuration file exist"
-else
-    echo "The APT proxy configuration file does not exist" #In questo caso bisogna crearlo
+# Check if APT configuration file already exist
+if [ ! -s $proxyConfFile ]; then
+    touch $proxyConfFile
+    sh -c `echo "Acquire::http::Proxy "http://$proxyUrl:${proxyPorts[0]}";" > $proxyConfFile`
+    echo "The APT proxy configuration file does not exist. It has been created to you"
 fi
 
 if isCompanyNetwork ; then
