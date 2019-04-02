@@ -10,14 +10,13 @@
 #   - freedom to share the changes you make
 #
 
+companyNetwork=$1
+amIInCompanyNetwork=1
 ProxyConfFile="/etc/apt/apt.conf" #Tested on Ubuntu18.10
-companyNetwork="XX.XX" # Change this variable with the first two byte (from left to right) of your company IPv4 network
 
 # Change values below based on your proxy setup
 #networkProtocols=( http https ftp )
 #networkPorts=( 8080 )
-
-amIInCompanyNetwork=1
 
 function isCompanyNetwork () {
     myNetwork=`hostname -I | awk -F '.' '{print $1"."$2}'`
