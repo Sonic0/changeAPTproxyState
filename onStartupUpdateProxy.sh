@@ -11,11 +11,11 @@
 #
 
 companyNetwork=$1
-amIInCompanyNetwork=1
+amIInCompanyNetwork=
 proxyConfFile="/etc/apt/apt.conf" #Tested on Ubuntu18.10
 proxyUrl=$2
 # Change values below based on your proxy setup
-#networkProtocols=( http https ftp )
+networkProtocols=( http https ftp )
 proxyPorts=( 8080 )
 
 
@@ -62,7 +62,8 @@ fi
 # Check if APT configuration file already exist
 if [ ! -s $proxyConfFile ]; then
     touch $proxyConfFile
-    sh -c `echo "\#Acquire::http::Proxy \"http://$proxyUrl:${proxyPorts[0]}\";" > $proxyConfFile`
+    # Populate apt.conf created
+    sh -c `echo "\#Acquire::http::Proxy \"http://$proxyUrl:${proxyPorts[0]}\";" > $proxyConfFile` #TODO: Create a loop for each protocol and each port
     echo "The APT proxy configuration file does not exist. It has been created to you"
 fi
 
