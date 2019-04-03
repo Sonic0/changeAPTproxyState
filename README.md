@@ -5,10 +5,14 @@
 
 </div>
 <br/>
-
+<div align="center">
+  
 [![Bash Shell](https://badges.frapsoft.com/bash/v1/bash.png?v=103)](https://github.com/ellerbrock/open-source-badges/)
 ![Version](https://img.shields.io/badge/version-pre--alpha-red.svg)
 [![Open Source Love](https://badges.frapsoft.com/os/gpl/gpl.svg?v=102)](https://github.com/ellerbrock/open-source-badge/)
+
+</div>
+<br/>
 
 Prerequisites
 -----
