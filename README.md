@@ -19,7 +19,7 @@ Prerequisites
 APT.CONF file must already exist in /etc/apt/ in form:
 
 ```
-Acquire::http::Proxy "http://$yourProxy:$port";
+Acquire::http::proxy "http://$yourProxy:$port";
 Acquire::https::proxy "https://$yourProxy:$port";
 Acquire::ftp::proxy "ftp://$yourProxy:$port";
 ```
