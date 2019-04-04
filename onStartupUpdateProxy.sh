@@ -2,13 +2,17 @@
 #
 #   VERSION = 0.1
 #
-# This script is under GPLv3. It is released AS IS.
+# This file is under GPLv3.
+# This file is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND
+#
 # You are:
 #   - freedom to use the software for any purpose,
 #   - freedom to change the software to suit your needs,
 #   - freedom to share the software with your friends and neighbors, and
 #   - freedom to share the changes you make
 #
+# Dependencies:
+# 
 
 companyNetwork=$1
 amIInCompanyNetwork=
