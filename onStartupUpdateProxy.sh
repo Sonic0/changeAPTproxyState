@@ -2,22 +2,23 @@
 #================================================================
 # HEADER
 #================================================================
+#% DESCRIPTION
+#%    Change APT proxy when you swith between work and private network
+#% 
+#%    You Must execute ${SCRIPT_NAME} with root privileges
+#%
 #% SYNOPSIS
 #+    ${SCRIPT_NAME} [-iphv] companyNetwork proxyUrl
 #%
-#%    You Must execute ${SCRIPT_NAME} with root privileges
-#%
-#% DESCRIPTION
-#%    Change proxy when you swith between work and private network
-#%
 #% OPTIONS
-#%    -i, --interface               Check if the specified interfaced is up, then the proxy will change or not
-#%    -p, --port                    Set the port of the Proxy
-#%    -h, --help                    Print this help
-#%    -v, --version                 Print script information
+#%    -i, --interface		Check if the specified interface is up, then the proxy will change or not
+#%    -p, --port            Set the port of the Proxy
+#%    -h, --help            Print this help
+#%    -v, --version         Print script information
 #%
 #% EXAMPLES
-#%   sudo ${SCRIPT_NAME} -i enp2s0 10.01 proxy.domain.xx 
+#%    sudo ${SCRIPT_NAME} 10.11.12.0 proxy.domain.xx
+#%    sudo ${SCRIPT_NAME} -i enp2s0 10.11.12.0 proxy.domain.xx
 #%
 #================================================================
 #- IMPLEMENTATION
