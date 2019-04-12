@@ -47,11 +47,11 @@
 activeOrDeactiveProxy () {
     if [ $amIInCompanyNetwork == 0 ] ; then
         
-        sed -i 's .  ' $proxyConfFile
+        sed -i 's .  ' $dir_proxyConfFile
         echo "Proxy for APT is activated" # Remove "#" to the beginning of each line
         elif [ $amIInCompanyNetwork == 1 ]; then
         
-        sed -i 's/^/#/' $proxyConfFile # Add "#" to the beginning of each line
+        sed -i 's/^/#/' $dir_proxyConfFile # Add "#" to the beginning of each line
         echo "Proxy for APT is disactivated"
     else
         echo "Error. Set proxy manually"
@@ -74,13 +74,52 @@ isCompanyNetwork () {
 }
 
 createDefaultAptConfFile () {
-    touch $proxyConfFile
-    sh -c `echo "\#Acquire::http::Proxy \"http://$proxyUrl:$proxyPort\";" > $proxyConfFile` #TODO: Create a loop for each protocol and each port
+    touch $dir_proxyConfFile
+    sh -c `echo "\#Acquire::http::Proxy \"http://$proxyUrl:$proxyPort\";" > $dir_proxyConfFile` #TODO: Create a loop for each protocol and each port
     info "The APT proxy configuration file does not exist. It has been created to you"
 }
 
-isInterfaceUP () ( cat /sys/class/net/$netInterfaceForProxy/operstate )
-interfaceExists () ( [[ -d /sys/class/net/$netInterfaceForProxy ]] && return 0 || return 1 )
+interfaceExists () ( [ -d $dir_netStat$netInterfaceForProxy ] && return 0 || return 1 )
+
+isInterfaceUP () { 
+	local status=1
+	local resultOfCat
+	local operationFilePath="$dir_netStat$netInterfaceForProxy/operstate"
+	# 
+	resultOfCat=$(cat ${operationFilePath})
+	if [ -a $operationFilePath ] && [ -r $operationFilePath ] && [ "${resultOfCat}" == "up" ] || [ "${resultOfCat}" == "UP" ]  ; then
+		status=0
+	fi
+	return $status
+}
+
+# Test an IP address for validity:
+# Usage:
+#      isValidIP IP_ADDRESS
+#      if [[ $? -eq 0 ]]; then echo good; else echo bad; fi
+#   OR
+#      if isValidIP IP_ADDRESS; then echo good; else echo bad; fi
+#
+# Code by https://www.linuxjournal.com/content/validating-ip-address-bash-script
+isValidIP () {
+    local ip=$1
+    local stat=1
+
+    if [[ $ip =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then #Check if $ip string match with regular expr
+        OIFS=$IFS
+        IFS='.'
+        ip=($ip)
+        IFS=$OIFS
+        [[ ${ip[0]} -le 255 && ${ip[1]} -le 255 \
+            && ${ip[2]} -le 255 && ${ip[3]} -le 255 ]]
+        stat=$? # Capture the result of the prev condition
+    fi
+    return $stat
+}
+
+isPrivateIP () {
+	echo "valid"
+}
 
     #== fecho function ==#
 fecho() {
@@ -130,7 +169,8 @@ SCRIPT_TIMELOG_FORMAT="+%y/%m/%d@%H:%M:%S"
     #== function variables ==#
 netInterfaceForProxy=""
 companyNetwork=""
-proxyConfFile="/etc/apt/apt.conf" #Tested on Ubuntu18.10
+readonly dir_proxyConfFile="/etc/apt/apt.conf" #Tested on Ubuntu18.10
+readonly dir_netStat="/sys/class/net/"
 proxyUrl=""
 # Change values below based on your proxy setup
 networkProtocols=( http https ftp ) # Default protocols
@@ -192,7 +232,7 @@ while getopts ${SCRIPT_OPTS} OPTION ; do
 	#== manage options ==#
 	case "$OPTION" in
 	    i ) netInterfaceForProxy=$OPTARG
-            info "Interface in wich the proxy must be activated is: $interfaceToCheck"
+            info "Interface in wich the proxy must be activated is: $netInterfaceForProxy"
         ;;
 
         p )	proxyPort=$OPTARG
@@ -229,17 +269,26 @@ shift $((${OPTIND} - 1)) ## shift options
 [ `whoami` != "root" ] && error "Must be root to run ${SCRIPT_NAME}" && flagOptErr=1
 
     #== Check if interface is passed as option and then if it is UP ==#
-if [ $netInterfaceForProxy != "" ]; then
+if [ -n $netInterfaceForProxy ]; then
 
-    if interfaceExists "$netInterfaceForProxy" ; then 
-        isInterfaceUP "$netInterfaceForProxy"
-    fi
-        if [ $? != "UP" ] ; then 
-            info "Interface $netInterfaceForProxy is DOWN or do not exists, please check your connectivity" && flagOptErr=1
-        fi
+    if ! interfaceExists $netInterfaceForProxy || ! isInterfaceUP $netInterfaceForProxy ; then 
+        info "Interface $netInterfaceForProxy is DOWN or do not exists, please check your connectivity" && flagOptErr=1
+	fi
 
 else
     info "You don't have specified a preferred network interface, $SCRIPT_NAME do not check this option" 
+fi
+
+	#==	Check if Network as arg1 is in a right form	==#
+companyNetwork=${1}
+if [ -n $companyNetwork ]  && isValidIP "$companyNetwork" ; then
+	
+	if ! isPrivateIP "$companyNetwork" ; then
+		info "You have not specified a private IP" && flagOptErr=1
+	fi
+
+else
+	info "You have specified an invalid IP" && flagOptErr=1
 fi
 
     #== print usage if option error and exit ==#
@@ -248,9 +297,9 @@ fi
 flagMainScriptStart=1
 
 	#== Check if APT configuration file already exist ==#
-[ ! -s $proxyConfFile ] && createDefaultAptConfFile
+[ ! -s $dir_proxyConfFile ] && createDefaultAptConfFile
 
-companyNetwork=${1}
+
 proxyUrl=${2}
 info "Your company network is $companyNetwork"
 info "Proxy to configure is $proxyUrl"
@@ -260,4 +309,5 @@ if isCompanyNetwork "$companyNetwork" ; then
 fi
 
 flagMainScriptStart=0
+
 exit 0
