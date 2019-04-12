@@ -239,11 +239,11 @@ if [ $netInterfaceForProxy != "" ]; then
         fi
 
 else
-    info "You dont had specified a preferred network interface, $SCRIPT_NAME do not check this option" 
+    info "You don't have specified a preferred network interface, $SCRIPT_NAME do not check this option" 
 fi
 
     #== print usage if option error and exit ==#
-[ $flagOptErr -eq 1 ] && usage 1>&2 && exit 1 
+[ $flagOptErr -eq 1 ] && usage 1>&2 && exit 1
 
 flagMainScriptStart=1
 
