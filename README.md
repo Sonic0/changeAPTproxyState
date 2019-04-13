@@ -16,7 +16,7 @@
 
 Prerequisites
 -----
-APT.CONF file must already exist in /etc/apt/ in form:
+**apt.conf** file must already exist in **/etc/apt/** in form:
 
 ```
 Acquire::http::proxy "http://$yourProxy:$port";
@@ -30,12 +30,21 @@ For now --> clone this repo and execute manually the script
 
 Usage
 -----
-Execute the script with 2 parameter: first two bytes of the network address where the proxy must be activated and the proxy URL.
-You must be _root_ .
+You Must execute ./onStartUpUpdateProxy with root privileges
 
-_For example:_
 ```
-./onStartUpUpdateProxy 10.11 myproxy.mydomain.com
+ SYNOPSIS
+    ${SCRIPT_NAME} [-iphv] companyNetwork proxyUrl
+
+ OPTIONS
+    -i, --interface       Check if the specified interface is up, then the proxy will change or not
+    -p, --port            Set the port of the Proxy
+    -h, --help            Print this help
+    -v, --version         Print script information
+
+ EXAMPLES
+    sudo onStartUpUpdateProxy.sh 10.11.12.0 proxy.domain.xx
+    sudo onStartUpUpdateProxy.sh -i enp2s0 10.11.12.0 proxy.domain.xx
 ```
 
 License
