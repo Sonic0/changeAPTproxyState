@@ -94,19 +94,13 @@ isInterfaceUP () {
 	return $status
 }
 
-# Test an IP address for validity:
-# Usage:
-#      isValidIP IP_ADDRESS
-#      if [[ $? -eq 0 ]]; then echo good; else echo bad; fi
-#   OR
-#      if isValidIP IP_ADDRESS; then echo good; else echo bad; fi
-#
+# Test an IP address for validity.
 # Code by https://www.linuxjournal.com/content/validating-ip-address-bash-script
 isValidIP () {
     local ip=$1
     local stat=1
-
-    if [[ $ip =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then #Check if $ip string match with regular expr
+		# Regex to check if IP is a valid ipv4 address
+    if [[ $ip =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
         OIFS=$IFS
         IFS='.'
         ip=($ip)
@@ -119,7 +113,13 @@ isValidIP () {
 }
 
 isPrivateIP () {
-	echo "valid"
+	local ip=$1
+    local stat=1
+		# Regex to check if the IP is in the range of private ip classes
+    if [[ $ip =~ ^(192\.168|10\.|172\.1[6-9]\.|172\.2[0-9]\.|172\.3[01]\.) ]]; then
+        stat=$? # Capture the result of the prev condition
+    fi
+    return $stat
 }
 
     #== fecho function ==#
@@ -282,6 +282,7 @@ fi
 
 	#==	Check if Network as arg1 is in a right form	==#
 companyNetwork=${1}
+
 if [ -n $companyNetwork ]  && isValidIP "$companyNetwork" ; then
 	
 	if ! isPrivateIP "$companyNetwork" ; then
