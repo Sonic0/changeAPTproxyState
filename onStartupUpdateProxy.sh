@@ -45,33 +45,27 @@
 # END_OF_HEADER
 #================================================================
 
-activeOrDeactiveProxy () {
-    if [ $amIInCompanyNetwork == 0 ] ; then
-        
-        sed -i 's .  ' $dir_proxyConfFile
-        echo "Proxy for APT is activated" # Remove "#" to the beginning of each line
-        elif [ $amIInCompanyNetwork == 1 ]; then
-        
-        sed -i 's/^/#/' $dir_proxyConfFile # Add "#" to the beginning of each line
-        echo "Proxy for APT is disactivated"
-    else
-        echo "Error. Set proxy manually"
-    fi
+activeProxy () {
+    sed -i 's .  ' $dir_proxyConfFile
+    echo "Proxy for APT is activated" # Remove "#" to the beginning of each line
+}
+
+deactiveProxy () {
+	sed -i 's/^/#/' $dir_proxyConfFile # Add "#" to the beginning of each line
+    echo "Proxy for APT is disactivated"
 }
 
 isCompanyNetwork () {
-    myNetwork=`hostname -I | awk -F '.' '{print $1"."$2}'`
-    
-    echo "My network $myNetwork.X.X and the network $companyNetwork.X.X are "
-    [ $myNetwork == $companyNetwork ] && echo "In the same network" || echo "Not in the same network"
-    
-    if [[ $myNetwork == $companyNetwork ]]; then
-        echo "I am in my company's network, active proxy"
-        amIInCompanyNetwork=0
-    else
-        echo "I'm in a Private network, deactive proxy"
-        amIInCompanyNetwork=1
-    fi
+	local amIInCompanyNetwork=1
+
+    myIP=`hostname -I | awk -F '.' '{print $1"."$2"."$3"."$4}'`
+
+	myNetwork=`ip route | grep "src ${myIP}" | awk '{print $1}'`
+
+    info "My network is $myNetwork and the company network is $companyNetwork"
+    [[ $myIP == $companyNetwork ]] && amIInCompanyNetwork=0
+	
+	return $amIInCompanyNetwork
 }
 
 createDefaultAptConfFile () {
@@ -169,6 +163,8 @@ SCRIPT_TIMELOG_FORMAT="+%y/%m/%d@%H:%M:%S"
 
     #== function variables ==#
 netInterfaceForProxy=""
+myIP=
+myNetwork=""
 companyNetwork=""
 readonly dir_proxyConfFile="/etc/apt/apt.conf" #Tested on Ubuntu18.10
 readonly dir_netStat="/sys/class/net/"
@@ -307,7 +303,9 @@ info "Your company network is $companyNetwork"
 info "Proxy to configure is $proxyUrl"
 
 if isCompanyNetwork "$companyNetwork" ; then
-    activeOrDeactiveProxy
+	activeProxy
+else
+	deactiveProxy
 fi
 
 flagMainScriptStart=0
