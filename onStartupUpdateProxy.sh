@@ -68,14 +68,6 @@ isCompanyNetwork () {
 	return $amIInCompanyNetwork
 }
 
-createDefaultAptConfFile () {
-    touch $dir_proxyConfFile
-    sh -c `echo "\#Acquire::http::Proxy \"http://$proxyUrl:$proxyPort\";" > $dir_proxyConfFile` #TODO: Create a loop for each protocol and each port
-    info "The APT proxy configuration file does not exist. It has been created to you"
-}
-
-interfaceExists () ( [ -d $dir_netStat$netInterfaceForProxy ] && return 0 || return 1 )
-
 isInterfaceUP () { 
 	local status=1
 	local resultOfCat
@@ -115,6 +107,14 @@ isPrivateIP () {
     fi
     return $stat
 }
+
+createDefaultAptConfFile () {
+    touch $dir_proxyConfFile
+    sh -c `echo "\#Acquire::http::Proxy \"http://$proxyUrl:$proxyPort\";" > $dir_proxyConfFile` #TODO: Create a loop for each protocol and each port
+    info "The APT proxy configuration file does not exist. It has been created to you"
+}
+
+interfaceExists () ( [ -d $dir_netStat$netInterfaceForProxy ] && return 0 || return 1 )
 
     #== fecho function ==#
 fecho() {
