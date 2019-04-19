@@ -85,7 +85,7 @@ isValidIP () {
     local ip=$1
     local stat=1
 		# Regex to check if IP is a valid ipv4 address
-    if [[ $ip =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
+    if [[ $ip =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]] ; then
         OIFS=$IFS
         IFS='.'
         ip=($ip)
@@ -94,17 +94,30 @@ isValidIP () {
             && ${ip[2]} -le 255 && ${ip[3]} -le 255 ]]
         stat=$? # Capture the result of the prev condition
     fi
-    return $stat
+    
+	return $stat
 }
 
 isPrivateIP () {
 	local ip=$1
     local stat=1
 		# Regex to check if the IP is in the range of private ip classes
-    if [[ $ip =~ ^(192\.168|10\.|172\.1[6-9]\.|172\.2[0-9]\.|172\.3[01]\.) ]]; then
+    if [[ $ip =~ ^(192\.168|10\.|172\.1[6-9]\.|172\.2[0-9]\.|172\.3[01]\.) ]] ; then
         stat=$? # Capture the result of the prev condition
     fi
-    return $stat
+    
+	return $stat
+}
+
+isValidProxy () {
+	local url=$1
+	local stat=1
+
+	if [[ $url =~ ^[a-z0-9]*[a-z0-9]\.[a-z0-9]*[a-z0-9]\.(it|com|eu)$ ]] ; then
+		stat=$?
+	fi
+
+	return $stat
 }
 
 createDefaultAptConfFile () {
@@ -187,6 +200,7 @@ proxyPort="8080"
 #== option variables ==#
 amIInCompanyNetwork=0
 flagOptErr=0
+flagArgErr=0
 flagMainScriptStart=0
 flagDbg=0
 
@@ -272,7 +286,9 @@ shift $((${OPTIND} - 1)) ## shift options
 #============================
 #  MAIN SCRIPT
 #============================
-	
+
+flagMainScriptStart=1
+
 #== Check if I am root ==#
 [ `whoami` != "root" ] && error "Must be root to run ${SCRIPT_NAME}" && flagOptErr=1
 
@@ -300,12 +316,21 @@ else
 	info "You have specified an invalid IP" && flagOptErr=1
 fi
 
+#==	Check if proxyUrl as arg2 is a valid url	==#
+proxyUrl=${2}
+
+# Check if it's not empty
+[ -z $proxyUrl ] && flagOptErr=1 && usage 1>&2 && exit 1
+
+if isValidProxy "$proxyUrl" ; then
+	info "Proxy Url is valid"
+else
+	flagOptErr=1
+	error "arg proxyUrl is invalid"
+fi
+
 #== print usage if option error and exit ==#
 [ $flagOptErr -eq 1 ] && usage 1>&2 && exit 1
-
-flagMainScriptStart=1
-
-proxyUrl=${2}
 
 #== Check if APT configuration file already exist, otherwise creates it ==#
 [ ! -s $dir_proxyConfFile ] && createDefaultAptConfFile && info "The APT proxy configuration file does not exist. It has been created to you"
