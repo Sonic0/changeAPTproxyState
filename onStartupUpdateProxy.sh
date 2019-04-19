@@ -58,13 +58,12 @@ deactiveProxy () {
 isCompanyNetwork () {
 	local amIInCompanyNetwork=1
 
-    myIP=`hostname -I | awk -F '.' '{print $1"."$2"."$3"."$4}'`
+    myIP=$( hostname -I | awk '{print $1}' )
+	myNetwork=$( ip route | grep "src ${myIP}" | head -n 1 | awk -F '/' '{print $1}' )
 
-	myNetwork=`ip route | grep "src ${myIP}" | awk '{print $1}'`
+	info "My network is $myNetwork and the company network is $companyNetwork"
 
-    info "My network is $myNetwork and the company network is $companyNetwork"
-    [[ $myIP == $companyNetwork ]] && amIInCompanyNetwork=0
-	
+    [[ ${myNetwork} == ${companyNetwork} ]] && amIInCompanyNetwork=0
 	return $amIInCompanyNetwork
 }
 
@@ -72,8 +71,8 @@ isInterfaceUP () {
 	local status=1
 	local resultOfCat
 	local operationFilePath="$dir_netStat$netInterfaceForProxy/operstate"
-	# 
-	resultOfCat=$(cat ${operationFilePath})
+
+	resultOfCat=$( cat ${operationFilePath} )
 	if [ -a $operationFilePath ] && [ -r $operationFilePath ] && [ "${resultOfCat}" == "up" ] || [ "${resultOfCat}" == "UP" ]  ; then
 		status=0
 	fi
@@ -110,20 +109,32 @@ isPrivateIP () {
 
 createDefaultAptConfFile () {
     touch $dir_proxyConfFile
-    sh -c `echo "\#Acquire::http::Proxy \"http://$proxyUrl:$proxyPort\";" > $dir_proxyConfFile` #TODO: Create a loop for each protocol and each port
-    info "The APT proxy configuration file does not exist. It has been created to you"
+	local stat=1
+
+	if [ -e $dir_proxyConfFile ] ; then
+		for protocol in ${proxyProtocols[@]} ; do
+			if [ ${protocol} == "https" ] ; then
+				echo "Acquire::$protocol::Proxy "\"http://$proxyUrl:$proxyPort\"\;"" >> $dir_proxyConfFile
+			else 
+				echo "Acquire::$protocol::Proxy "\"$protocol://$proxyUrl:$proxyPort\"\;"" >> $dir_proxyConfFile
+			fi
+		done
+		stat=0
+	fi
+
+    return $stat
 }
 
 interfaceExists () ( [ -d $dir_netStat$netInterfaceForProxy ] && return 0 || return 1 )
 
-    #== fecho function ==#
+#== fecho function ==#
 fecho() {
 	_Type=${1} ; shift ;
 	[[ ${SCRIPT_TIMELOG_FLAG:-0} -ne 0 ]] && printf "$( date ${SCRIPT_TIMELOG_FORMAT} ) "
 	printf "[${_Type%[A-Z][A-Z]}] ${*}\n"
 }
 
-    #== error management functions ==#
+#== error management functions ==#
 info() ( fecho INF "${*}" )
 warning() ( fecho WRN "WARNING: ${*}" 1>&2 )
 error() ( fecho ERR "ERROR: ${*}" 1>&2 )
@@ -133,7 +144,7 @@ infotitle() { _txt="-==# ${*} #==-"; _txt2="-==#$( echo " ${*} " | tr '[:print:]
 	info "$_txt2"; info "$_txt"; info "$_txt2"; 
 }
 
-    #== usage functions ==#
+#== usage functions ==#
 scriptinfo() { headFilter="^#-"
 	[[ "$1" = "usg" ]] && headFilter="^#+"
 	[[ "$1" = "ful" ]] && headFilter="^#[%+]"
@@ -146,7 +157,7 @@ usagefull() ( scriptinfo ful )
 #  FILES AND VARIABLES
 #============================
 
-  #== general variables ==#
+#== general variables ==#
 SCRIPT_NAME=`basename ${0}` # scriptname without path
 SCRIPT_DIR=`cd $(dirname "$0") && pwd` # script directory
 SCRIPT_FULLPATH="${SCRIPT_DIR}/${SCRIPT_NAME}"
@@ -161,19 +172,19 @@ EXEC_ID=${$}
 SCRIPT_TIMELOG_FLAG=0
 SCRIPT_TIMELOG_FORMAT="+%y/%m/%d@%H:%M:%S"
 
-    #== function variables ==#
+#== function variables ==#
 netInterfaceForProxy=""
-myIP=
+myIP=""
 myNetwork=""
 companyNetwork=""
 readonly dir_proxyConfFile="/etc/apt/apt.conf" #Tested on Ubuntu18.10
 readonly dir_netStat="/sys/class/net/"
 proxyUrl=""
 # Change values below based on your proxy setup
-networkProtocols=( http https ftp ) # Default protocols
-proxyPort=""
+proxyProtocols=( http https ftp ) # Default protocols
+proxyPort="8080"
 
-    #== option variables ==#
+#== option variables ==#
 amIInCompanyNetwork=0
 flagOptErr=0
 flagMainScriptStart=0
@@ -183,10 +194,10 @@ flagDbg=0
 #  PARSE OPTIONS WITH GETOPTS
 #============================
 
-  #== set short options ==#
+#== set short options ==#
 SCRIPT_OPTS=':i:phv-:'
 
-  #== set long options associated with short one ==#
+#== set long options associated with short one ==#
 typeset -A ARRAY_OPTS
 ARRAY_OPTS=(
     [interface]=i
@@ -195,7 +206,7 @@ ARRAY_OPTS=(
 	[man]=h
 )
 
-  #== parse options ==#
+#== parse options ==#
 while getopts ${SCRIPT_OPTS} OPTION ; do
 	#== translate long options to short ==#
 	if [[ "x$OPTION" == "x-" ]]; then
@@ -262,10 +273,10 @@ shift $((${OPTIND} - 1)) ## shift options
 #  MAIN SCRIPT
 #============================
 	
-	#== Check if I am root ==#
+#== Check if I am root ==#
 [ `whoami` != "root" ] && error "Must be root to run ${SCRIPT_NAME}" && flagOptErr=1
 
-    #== Check if interface is passed as option and then if it is UP ==#
+#== Check if interface is passed as option and then if it is UP ==#
 if [ -n $netInterfaceForProxy ]; then
 
     if ! interfaceExists $netInterfaceForProxy || ! isInterfaceUP $netInterfaceForProxy ; then 
@@ -276,7 +287,7 @@ else
     info "You don't have specified a preferred network interface, $SCRIPT_NAME do not check this option" 
 fi
 
-	#==	Check if Network as arg1 is in a right form	==#
+#==	Check if Network as arg1 is in a right form	==#
 companyNetwork=${1}
 
 if [ -n $companyNetwork ]  && isValidIP "$companyNetwork" ; then
@@ -289,16 +300,16 @@ else
 	info "You have specified an invalid IP" && flagOptErr=1
 fi
 
-    #== print usage if option error and exit ==#
+#== print usage if option error and exit ==#
 [ $flagOptErr -eq 1 ] && usage 1>&2 && exit 1
 
 flagMainScriptStart=1
 
-	#== Check if APT configuration file already exist ==#
-[ ! -s $dir_proxyConfFile ] && createDefaultAptConfFile
-
-
 proxyUrl=${2}
+
+#== Check if APT configuration file already exist, otherwise creates it ==#
+[ ! -s $dir_proxyConfFile ] && createDefaultAptConfFile && info "The APT proxy configuration file does not exist. It has been created to you"
+
 info "Your company network is $companyNetwork"
 info "Proxy to configure is $proxyUrl"
 
