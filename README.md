@@ -14,16 +14,6 @@
 </div>
 <br/>
 
-Prerequisites
------
-**apt.conf** file must already exist in **/etc/apt/** in form:
-
-```
-Acquire::http::proxy "http://$yourProxy:$port";
-Acquire::https::proxy "https://$yourProxy:$port";
-Acquire::ftp::proxy "ftp://$yourProxy:$port";
-```
-
 Usage
 -----
 You Must execute ./onStartUpUpdateProxy with root privileges
