@@ -14,6 +14,10 @@
 </div>
 <br/>
 
+Compatibility
+-----
+Tested only on Ubuntu 18.10
+
 Usage
 -----
 You Must execute ./onStartUpUpdateProxy with root privileges
