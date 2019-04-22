@@ -166,6 +166,32 @@ scriptinfo() { headFilter="^#-"
 usage() ( printf "Usage: "; scriptinfo usg )
 usagefull() ( scriptinfo ful )
 
+exitFromScript () {
+	local alertType=$1
+	local message=$2
+	case "$alertType" in
+		info )
+			info "$message"
+		;;
+
+		warning )
+			warning "$message"
+		;;
+
+		error )
+			error "$message"
+		;;
+
+		* )
+			printf '\e[1m Unicorns hate you!! \e[0m\n'
+		;;
+		
+	esac
+
+	usage 1>&2
+	exit 1
+}
+
 #============================
 #  FILES AND VARIABLES
 #============================
@@ -290,13 +316,13 @@ shift $((${OPTIND} - 1)) ## shift options
 flagMainScriptStart=1
 
 #== Check if I am root ==#
-[ `whoami` != "root" ] && error "Must be root to run ${SCRIPT_NAME}" && flagOptErr=1
+[ `whoami` != "root" ] && exitFromScript error "Must be root to run ${SCRIPT_NAME}"
 
 #== Check if interface is passed as option and then if it is UP ==#
 if [ -n $netInterfaceForProxy ]; then
 
     if ! interfaceExists $netInterfaceForProxy || ! isInterfaceUP $netInterfaceForProxy ; then 
-        info "Interface $netInterfaceForProxy is DOWN or do not exists, please check your connectivity" && flagOptErr=1
+        exitFromScript error "Interface $netInterfaceForProxy is DOWN or do not exists, please check your connectivity"
 	fi
 
 else
@@ -309,28 +335,28 @@ companyNetwork=${1}
 if [ -n $companyNetwork ]  && isValidIP "$companyNetwork" ; then
 	
 	if ! isPrivateIP "$companyNetwork" ; then
-		info "You have not specified a private IP" && flagOptErr=1
+		exitFromScript error "You have not specified a private IP"
 	fi
 
 else
-	info "You have specified an invalid IP" && flagOptErr=1
+	exitFromScript error "You have specified an invalid IP"
 fi
 
 #==	Check if proxyUrl as arg2 is a valid url	==#
 proxyUrl=${2}
 
 # Check if it's not empty
-[ -z $proxyUrl ] && flagOptErr=1 && usage 1>&2 && exit 1
+[ -z $proxyUrl ] && exitFromScript error "You must specify proxy URL"
 
 if isValidProxy "$proxyUrl" ; then
 	info "Proxy Url is valid"
 else
 	flagOptErr=1
-	error "arg proxyUrl is invalid"
+	exitFromScript error "arg proxyUrl is invalid"
 fi
 
 #== print usage if option error and exit ==#
-[ $flagOptErr -eq 1 ] && usage 1>&2 && exit 1
+[ $flagOptErr -eq 1 ] && exitFromScript
 
 #== Check if APT configuration file already exist, otherwise creates it ==#
 [ ! -s $dir_proxyConfFile ] && createDefaultAptConfFile && info "The APT proxy configuration file does not exist. It has been created to you"
