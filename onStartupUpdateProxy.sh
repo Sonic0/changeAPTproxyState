@@ -55,6 +55,18 @@ deactiveProxy () {
     echo "Proxy for APT is disactivated"
 }
 
+RemoveUselessHastag () {
+	local stat=1
+
+	while grep -q ^\#\# $dir_proxyConfFile ; do
+		sed -i 's/##/#/g' $dir_proxyConfFile
+		stat=0
+	done
+
+	return $stat
+}
+#echo ${currentLine:0:3}
+
 isCompanyNetwork () {
 	local amIInCompanyNetwork=1
 
@@ -345,7 +357,7 @@ fi
 #==	Check if proxyUrl as arg2 is a valid url	==#
 proxyUrl=${2}
 
-# Check if it's not empty
+# Check if URL is not empty
 [ -z $proxyUrl ] && exitFromScript error "You must specify proxy URL"
 
 if isValidProxy "$proxyUrl" ; then
@@ -361,13 +373,25 @@ fi
 #== Check if APT configuration file already exist, otherwise creates it ==#
 [ ! -s $dir_proxyConfFile ] && createDefaultAptConfFile && info "The APT proxy configuration file does not exist. It has been created to you"
 
+#== Check if each line in apt.conf contains only one "#" ==#
+if RemoveUselessHastag ; then
+	info "Removed useless # for each lines in $dir_proxyConfFile"
+fi
+
 info "Your company network is $companyNetwork"
 info "Proxy to configure is $proxyUrl"
 
+#==	Check and change my apt proxy status ==#
 if isCompanyNetwork "$companyNetwork" ; then
 	activeProxy
 else
-	deactiveProxy
+	# If I found # means the proxy is already deactive
+	if grep -q ^\# $dir_proxyConfFile ; then
+		info "proxy already deactive"
+	else
+		deactiveProxy
+	fi
+
 fi
 
 flagMainScriptStart=0
