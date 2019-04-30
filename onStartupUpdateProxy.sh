@@ -63,12 +63,12 @@ RemoveUselessHastag () {
 		stat=0
 	done
 
+	AptProxyActive=1
 	return $stat
 }
-#echo ${currentLine:0:3}
 
 isCompanyNetwork () {
-	local amIInCompanyNetwork=1
+	amIInCompanyNetwork=1
 
     myIP=$( hostname -I | awk '{print $1}' )
 	myNetwork=$( ip route | grep "src ${myIP}" | head -n 1 | awk -F '/' '{print $1}' )
@@ -147,6 +147,7 @@ createDefaultAptConfFile () {
 		stat=0
 	fi
 
+	AptProxyActive=1
     return $stat
 }
 
@@ -236,7 +237,8 @@ proxyProtocols=( http https ftp ) # Default protocols
 proxyPort="8080"
 
 #== option variables ==#
-amIInCompanyNetwork=0
+AptProxyActive=1
+amIInCompanyNetwork=1
 flagOptErr=0
 flagArgErr=0
 flagMainScriptStart=0
@@ -371,19 +373,24 @@ fi
 [ $flagOptErr -eq 1 ] && exitFromScript
 
 #== Check if APT configuration file already exist, otherwise creates it ==#
-[ ! -s $dir_proxyConfFile ] && createDefaultAptConfFile && info "The APT proxy configuration file does not exist. It has been created to you"
+if [ ! -s $dir_proxyConfFile ] ; then
+	createDefaultAptConfFile
+	info "The APT proxy configuration file does not exist. It has been created to you"
+fi
 
 #== Check if each line in apt.conf contains only one "#" ==#
 if RemoveUselessHastag ; then
 	info "Removed useless # for each lines in $dir_proxyConfFile"
 fi
 
+#== General info ==#
 info "Your company network is $companyNetwork"
 info "Proxy to configure is $proxyUrl"
 
 #==	Check and change my apt proxy status ==#
 if isCompanyNetwork "$companyNetwork" ; then
 	activeProxy
+	AptProxyActive=0
 else
 	# If I found # means the proxy is already deactive
 	if grep -q ^\# $dir_proxyConfFile ; then
