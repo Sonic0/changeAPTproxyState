@@ -67,6 +67,43 @@ RemoveUselessHastag () {
 	return $stat
 }
 
+IsEachLineInCorrectForm () {
+	local i=0
+	local stat=1
+	local readonly subStringNoHastag="Acquire::"
+	local readonly subStringHastag="#Acquire:"
+	local linesArray=()
+
+	# Check if each line begins with given pattern, then save it in the array
+	while read -r line ; do
+
+		if [[ ${line:0:9} == $subStringNoHastag ]] || [[ ${line:0:9} == $subStringHastag ]] ; then
+			linesArray[i]=${line:0:9} # Create an array with the first 9 character of each line
+			((i++))
+		else
+			exitFromScript error "One line in $aptConfFile isn't in the right form"
+			stat=1
+			break
+		fi
+
+	done < $dir_proxyConfFile
+
+	# Check if each line is equal.
+	for element in ${linesArray[@]} ; do
+
+		if [[ ${linesArray[0]} == $element ]] ; then # I simply check if the first line is equal to others
+			stat=0;
+		else
+			stat=1
+			exitFromScript error "One line in $aptConfFile is different from others" 
+			break
+		fi
+
+	done
+
+	return $stat
+}
+
 isCompanyNetwork () {
 	amIInCompanyNetwork=1
 
@@ -96,16 +133,17 @@ isInterfaceUP () {
 isValidIP () {
     local ip=$1
     local stat=1
-		# Regex to check if IP is a valid ipv4 address
+		
+	# Regex to check if IP is a valid ipv4 address
     if [[ $ip =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]] ; then
         OIFS=$IFS
         IFS='.'
         ip=($ip)
         IFS=$OIFS
         [[ ${ip[0]} -le 255 && ${ip[1]} -le 255 \
-            && ${ip[2]} -le 255 && ${ip[3]} -le 255 ]]
+        	&& ${ip[2]} -le 255 && ${ip[3]} -le 255 ]]
         stat=$? # Capture the result of the prev condition
-    fi
+	fi
     
 	return $stat
 }
@@ -230,6 +268,7 @@ myIP=""
 myNetwork=""
 companyNetwork=""
 readonly dir_proxyConfFile="/etc/apt/apt.conf" #Tested on Ubuntu18.10
+readonly aptConfFile=$(basename $dir_proxyConfFile)
 readonly dir_netStat="/sys/class/net/"
 proxyUrl=""
 # Change values below based on your proxy setup
@@ -373,15 +412,26 @@ fi
 [ $flagOptErr -eq 1 ] && exitFromScript
 
 #== Check if APT configuration file already exist, otherwise creates it ==#
-if [ ! -s $dir_proxyConfFile ] ; then
+if [ ! -e $dir_proxyConfFile ] ; then
 	createDefaultAptConfFile
 	info "The APT proxy configuration file does not exist. It has been created to you"
+
+	#== If conf file exist, check if in the right form ==#
+elif [ -s $dir_proxyConfFile ] ; then
+
+	# Check if each line in apt.conf contains only one "#"(Hashtag)
+	RemoveUselessHastag && info "Removed useless # for each lines in $dir_proxyConfFile"
+
+	if IsEachLineInCorrectForm ; then
+		echo "Ogni linea è in forma corretta.... controllo se il proxy è già attivo"
+		# isProxyActive
+	fi
+
+else
+	error "Check your apt.conf file"
 fi
 
-#== Check if each line in apt.conf contains only one "#" ==#
-if RemoveUselessHastag ; then
-	info "Removed useless # for each lines in $dir_proxyConfFile"
-fi
+
 
 #== General info ==#
 info "Your company network is $companyNetwork"
