@@ -47,12 +47,14 @@
 
 activeProxy () {
     sed -i 's .  ' $dir_proxyConfFile
-    echo "Proxy for APT is activated" # Remove "#" to the beginning of each line
+	AptProxyActive=0
+    echo "Proxy for APT is now activated" # Remove "#" to the beginning of each line
 }
 
 deactiveProxy () {
 	sed -i 's/^/#/' $dir_proxyConfFile # Add "#" to the beginning of each line
-    echo "Proxy for APT is disactivated"
+	AptProxyActive=1
+    echo "Proxy for APT is now disactivated"
 }
 
 RemoveUselessHastag () {
@@ -104,6 +106,23 @@ IsEachLineInCorrectForm () {
 	return $stat
 }
 
+isProxyActive () {
+	local proxyProtocolsString=${proxyProtocols[@]}
+
+	while read -r line ; do
+
+		# case in which it is activated. 
+		if [[ $line =~ ^Acquire::(${proxyProtocolsString// /|})::Proxy\ \"(${proxyProtocolsString// /|})://${proxyUrl}:${proxyPort}\"\;$ ]] ; then
+			AptProxyActive=0
+		fi 
+		# case in which it is deactivated
+		if [[ $line =~ ^\#Acquire::(${proxyProtocolsString// /|})::Proxy\ \"(${proxyProtocolsString// /|})://${proxyUrl}:${proxyPort}\"\;$ ]] ; then
+			AptProxyActive=1
+		fi
+
+	done < $dir_proxyConfFile
+}
+
 isCompanyNetwork () {
 	amIInCompanyNetwork=1
 
@@ -113,6 +132,7 @@ isCompanyNetwork () {
 	info "My network is $myNetwork and the company network is $companyNetwork"
 
     [[ ${myNetwork} == ${companyNetwork} ]] && amIInCompanyNetwork=0
+
 	return $amIInCompanyNetwork
 }
 
@@ -177,9 +197,9 @@ createDefaultAptConfFile () {
 	if [ -e $dir_proxyConfFile ] ; then
 		for protocol in ${proxyProtocols[@]} ; do
 			if [ ${protocol} == "https" ] ; then
-				echo "Acquire::$protocol::Proxy "\"http://$proxyUrl:$proxyPort\"\;"" >> $dir_proxyConfFile
+				echo "#Acquire::$protocol::Proxy "\"http://$proxyUrl:$proxyPort\"\;"" >> $dir_proxyConfFile
 			else 
-				echo "Acquire::$protocol::Proxy "\"$protocol://$proxyUrl:$proxyPort\"\;"" >> $dir_proxyConfFile
+				echo "#Acquire::$protocol::Proxy "\"$protocol://$proxyUrl:$proxyPort\"\;"" >> $dir_proxyConfFile
 			fi
 		done
 		stat=0
@@ -273,10 +293,10 @@ readonly dir_netStat="/sys/class/net/"
 proxyUrl=""
 # Change values below based on your proxy setup
 proxyProtocols=( http https ftp ) # Default protocols
-proxyPort="8080"
+proxyPort=8080
 
 #== option variables ==#
-AptProxyActive=1
+declare -i AptProxyActive
 amIInCompanyNetwork=1
 flagOptErr=0
 flagArgErr=0
@@ -423,8 +443,8 @@ elif [ -s $dir_proxyConfFile ] ; then
 	RemoveUselessHastag && info "Removed useless # for each lines in $dir_proxyConfFile"
 
 	if IsEachLineInCorrectForm ; then
-		echo "Ogni linea è in forma corretta.... controllo se il proxy è già attivo"
-		# isProxyActive
+		# each line is in right form, so checks if proxy is already active
+		isProxyActive
 	fi
 
 else
@@ -432,24 +452,32 @@ else
 fi
 
 
-
 #== General info ==#
 info "Your company network is $companyNetwork"
 info "Proxy to configure is $proxyUrl"
 
 #==	Check and change my apt proxy status ==#
-if isCompanyNetwork "$companyNetwork" ; then
-	activeProxy
-	AptProxyActive=0
-else
-	# If I found # means the proxy is already deactive
-	if grep -q ^\# $dir_proxyConfFile ; then
-		info "proxy already deactive"
-	else
-		deactiveProxy
-	fi
+isCompanyNetwork ${companyNetwork}
 
-fi
+case $AptProxyActive in
+	0)
+		if (( ${amIInCompanyNetwork} == 0 )) ; then
+			info "proxy already ACTIVATED"
+		else
+			deactiveProxy
+		fi
+	;;
+	1)
+		if (( ${amIInCompanyNetwork} == 0 )) ; then
+			activeProxy
+		else
+			info "Proxy already DEACTIVATED"
+		fi
+	;;
+	*)
+		exitFromScript error "Unespected Error"
+	;;
+esac
 
 flagMainScriptStart=0
 
