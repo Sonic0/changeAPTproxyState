@@ -12,7 +12,7 @@
 #%
 #% OPTIONS
 #%    -i, --interface		Check if the specified interface is up, then the proxy will change or not
-#%    -p, --port            Set the port of the Proxy
+#%    -p, --port            Set the port of the Proxy. Default port: 8080.
 #%    -h, --help            Print this help
 #%    -v, --version         Print script information
 #%
@@ -107,11 +107,11 @@ IsEachLineInCorrectForm () {
 }
 
 isProxyActive () {
-	local proxyProtocolsString=${proxyProtocols[@]}
+	local proxyProtocolsString=${proxyProtocols[@]} # Protocol array in single string to perform sobstitution of " " with "|" for the regex 
 
 	while read -r line ; do
 
-		# case in which it is activated. 
+		# case in which it is activated
 		if [[ $line =~ ^Acquire::(${proxyProtocolsString// /|})::Proxy\ \"(${proxyProtocolsString// /|})://${proxyUrl}:${proxyPort}\"\;$ ]] ; then
 			AptProxyActive=0
 		fi 
@@ -475,7 +475,7 @@ case $AptProxyActive in
 		fi
 	;;
 	*)
-		exitFromScript error "Unespected Error"
+		exitFromScript error "Unexpected Error"
 	;;
 esac
 

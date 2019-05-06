@@ -9,7 +9,7 @@
   
 [![Bash Shell](https://badges.frapsoft.com/bash/v1/bash.png?v=103)](https://github.com/ellerbrock/open-source-badges/)
 ![Version](https://img.shields.io/badge/version-pre--alpha-red.svg)
-[![Open Source Love](https://badges.frapsoft.com/os/gpl/gpl.svg?v=102)](https://github.com/ellerbrock/open-source-badge/)
+[![Open Source Love](https://badges.frapsoft.com/os/v1/open-source.png?v=103)](https://github.com/ellerbrock/open-source-badges/)
 
 </div>
 <br/>
@@ -28,7 +28,7 @@ You Must execute ./onStartUpUpdateProxy with root privileges
 
  OPTIONS
     -i, --interface       Check if the specified interface is up, then the proxy will change or not
-    -p, --port            Set the port of the Proxy
+    -p, --port            Set the port of the Proxy. Default port: 8080
     -h, --help            Print this help
     -v, --version         Print script information
 
