@@ -16,7 +16,7 @@
 
 Compatibility
 -----
-Tested only on Ubuntu 18.10
+Tested on Ubuntu 18.10 and 19.04
 
 Usage
 -----
