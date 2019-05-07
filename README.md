@@ -16,7 +16,7 @@
 
 Compatibility
 -----
-Tested on _Ubuntu 18.10_ and _19.04_
+Tested on _Ubuntu 18.10_ and _19.04_ .<br/>
 Not work in _Ubuntu 16.04_, yet.
 
 Usage
