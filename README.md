@@ -44,7 +44,7 @@ Beyond manual use, there are some method to simplified the script calls:
 
 * Create alias in your ~/.bashrc ( ~/.zshrc -> in case of ZSH)
   
-  > alias SHORTCUT='sudo bash SCRIPT_PATH/changeAPTproxyState/onStartupUpdateProxy.sh -i enp0s2 10.21.0.0 proxy.domain.sh'
+  > alias SHORTCUT='sudo bash SCRIPT_PATH/changeAPTproxyState/updateProxy.sh -i enp0s2 10.21.0.0 proxy.domain.sh'
 
 
 License
