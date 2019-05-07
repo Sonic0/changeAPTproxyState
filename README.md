@@ -1,7 +1,7 @@
 <div align="center">
 
 # changeAPTproxyState
-### Change the proxy state for APT. Active or deactive proxy rules in /etc/apt/apt.conf
+### Change the proxy state for APT. It activates or deactivates proxy rules in /etc/apt/apt.conf
 
 </div>
 <br/>
@@ -16,15 +16,16 @@
 
 Compatibility
 -----
-Tested on Ubuntu 18.10 and 19.04
+Tested on _Ubuntu 18.10_ and _19.04_
+Not work in _Ubuntu 16.04_, yet.
 
 Usage
 -----
-You Must execute ./onStartUpUpdateProxy with root privileges
+You Must execute ./updateProxy with root privileges
 
 ```
  SYNOPSIS
-    ${SCRIPT_NAME} [-iphv] companyNetwork proxyUrl
+    ./updateProxy [-iphv] companyNetwork proxyUrl
 
  OPTIONS
     -i, --interface       Check if the specified interface is up, then the proxy will change or not
@@ -33,8 +34,8 @@ You Must execute ./onStartUpUpdateProxy with root privileges
     -v, --version         Print script information
 
  EXAMPLES
-    sudo onStartUpUpdateProxy.sh 10.11.12.0 proxy.domain.xx
-    sudo onStartUpUpdateProxy.sh -i enp2s0 10.11.12.0 proxy.domain.xx
+    sudo ./updateProxy 10.11.12.0 proxy.domain.xx
+    sudo ./updateProxy -i enp2s0 10.11.12.0 proxy.domain.xx
 ```
 
 Shortcuts
