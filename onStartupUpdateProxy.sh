@@ -22,7 +22,7 @@
 #%
 #================================================================
 #- IMPLEMENTATION
-#-    version         ${SCRIPT_NAME} 0.2
+#-    version         ${SCRIPT_NAME} 0.2.1
 #-    author          Andrea Sonic0 Salvatori <andrea.salvatori92@gmail.com>
 #-    license         GPLv3
 #-    script_id       0
@@ -69,21 +69,27 @@ RemoveUselessHastag () {
 	return $stat
 }
 
-IsEachLineInCorrectForm () {
-	local i=0
+isEachLineInCorrectForm () {
 	local stat=1
-	local readonly subStringNoHastag="Acquire::"
-	local readonly subStringHastag="#Acquire:"
-	local linesArray=()
+	local proxyProtocolsString=${proxyProtocols[@]} # Protocol array in single string to perform sobstitution of " " with "|" for the regex 
+	local beginWithHash=0
+	local beginWithoutHash=0
+	local lineNumber=$( wc -l $dir_proxyConfFile | awk '{print $1}' )
 
 	# Check if each line begins with given pattern, then save it in the array
 	while read -r line ; do
 
-		if [[ ${line:0:9} == $subStringNoHastag ]] || [[ ${line:0:9} == $subStringHastag ]] ; then
-			linesArray[i]=${line:0:9} # Create an array with the first 9 character of each line
-			((i++))
+		if [[ $line =~ ^Acquire::(${proxyProtocolsString// /|})::Proxy\ \"(${proxyProtocolsString// /|})://${proxyUrl}:${proxyPort}\"\;$ ]] ; then
+
+			((beginWithoutHash++))
+			stat=0
+		
+		elif [[ $line =~ ^\#Acquire::(${proxyProtocolsString// /|})::Proxy\ \"(${proxyProtocolsString// /|})://${proxyUrl}:${proxyPort}\"\;$ ]] ; then
+			
+			((beginWithHash++))
+			stat=0
+		
 		else
-			exitFromScript error "One line in $aptConfFile isn't in the right form"
 			stat=1
 			break
 		fi
@@ -91,17 +97,15 @@ IsEachLineInCorrectForm () {
 	done < $dir_proxyConfFile
 
 	# Check if each line is equal.
-	for element in ${linesArray[@]} ; do
+	if [ $stat -eq 0 ]  ; then # This is 0 in case of each lines, of the apt conf file, is in right form
 
-		if [[ ${linesArray[0]} == $element ]] ; then # I simply check if the first line is equal to others
-			stat=0;
-		else
-			stat=1
-			exitFromScript error "One line in $aptConfFile is different from others" 
-			break
-		fi
+			if [ ${beginWithHash} -eq ${lineNumber} ] || [ ${beginWithoutHash} -eq ${lineNumber} ] ; then
+				stat=0
+			else
+				stat=2
+			fi
 
-	done
+	fi
 
 	return $stat
 }
@@ -442,13 +446,23 @@ elif [ -s $dir_proxyConfFile ] ; then
 	# Check if each line in apt.conf contains only one "#"(Hashtag)
 	RemoveUselessHastag && info "Removed useless # for each lines in $dir_proxyConfFile"
 
-	if IsEachLineInCorrectForm ; then
-		# each line is in right form, so checks if proxy is already active
-		isProxyActive
-	fi
+	isEachLineInCorrectForm
+
+	case $? in
+		0)	
+			# each line is in right form, so checks if proxy is already active
+			isProxyActive 
+		;;
+		1)
+			exitFromScript error "One line in $aptConfFile isn't in the right form"
+		;;
+		2)
+			exitFromScript error "One line in $aptConfFile is different from others" 
+		;;
+	esac
 
 else
-	error "Check your apt.conf file"
+	exitFromScript error "Check your apt.conf file"
 fi
 
 
