@@ -46,27 +46,22 @@
 #================================================================
 
 activeProxy () {
-    sed -i 's .  ' $dir_proxyConfFile
-	AptProxyActive=0
-    echo "Proxy for APT is now activated" # Remove "#" to the beginning of each line
+    sed -i 's .  ' ${dir_proxyConfFile} # Remove "#" to the beginning of each line
 }
 
 deactiveProxy () {
-	sed -i 's/^/#/' $dir_proxyConfFile # Add "#" to the beginning of each line
-	AptProxyActive=1
-    echo "Proxy for APT is now disactivated"
+	sed -i 's/^/#/' ${dir_proxyConfFile} # Add "#" to the beginning of each line
 }
 
 RemoveUselessHastag () {
 	local stat=1
 
-	while grep -q ^\#\# $dir_proxyConfFile ; do
-		sed -i 's/##/#/g' $dir_proxyConfFile
+	while grep -q ^\#\# ${dir_proxyConfFile} ; do
+		sed -i 's/##/#/g' ${dir_proxyConfFile}
 		stat=0
 	done
 
-	AptProxyActive=1
-	return $stat
+	return ${stat}
 }
 
 isEachLineInCorrectForm () {
@@ -79,12 +74,12 @@ isEachLineInCorrectForm () {
 	# Check if each line begins with given pattern, then save it in the array
 	while read -r line ; do
 
-		if [[ $line =~ ^Acquire::(${proxyProtocolsString// /|})::Proxy\ \"(${proxyProtocolsString// /|})://${proxyUrl}:${proxyPort}\"\;$ ]] ; then
+		if [[ ${line} =~ ^Acquire::(${proxyProtocolsString// /|})::Proxy\ \"(${proxyProtocolsString// /|})://${proxyUrl}:${proxyPort}\"\;$ ]] ; then
 
 			((beginWithoutHash++))
 			stat=0
 		
-		elif [[ $line =~ ^\#Acquire::(${proxyProtocolsString// /|})::Proxy\ \"(${proxyProtocolsString// /|})://${proxyUrl}:${proxyPort}\"\;$ ]] ; then
+		elif [[ ${line} =~ ^\#Acquire::(${proxyProtocolsString// /|})::Proxy\ \"(${proxyProtocolsString// /|})://${proxyUrl}:${proxyPort}\"\;$ ]] ; then
 			
 			((beginWithHash++))
 			stat=0
@@ -94,10 +89,10 @@ isEachLineInCorrectForm () {
 			break
 		fi
 
-	done < $dir_proxyConfFile
+	done < ${dir_proxyConfFile}
 
 	# Check if each line is equal.
-	if [ $stat -eq 0 ]  ; then # This is 0 in case of each lines, of the apt conf file, is in right form
+	if [ ${stat} -eq 0 ]  ; then # This is 0 in case of each lines, of the apt conf file, is in right form
 
 			if [ ${beginWithHash} -eq ${lineNumber} ] || [ ${beginWithoutHash} -eq ${lineNumber} ] ; then
 				stat=0
@@ -107,24 +102,22 @@ isEachLineInCorrectForm () {
 
 	fi
 
-	return $stat
+	return ${stat}
 }
 
 isProxyActive () {
-	local proxyProtocolsString=${proxyProtocols[@]} # Protocol array in single string to perform sobstitution of " " with "|" for the regex 
-
 	while read -r line ; do
 
 		# case in which it is activated
-		if [[ $line =~ ^Acquire::(${proxyProtocolsString// /|})::Proxy\ \"(${proxyProtocolsString// /|})://${proxyUrl}:${proxyPort}\"\;$ ]] ; then
+		if [[ ${line} =~ ^Acquire::* ]] ; then
 			AptProxyActive=0
 		fi 
 		# case in which it is deactivated
-		if [[ $line =~ ^\#Acquire::(${proxyProtocolsString// /|})::Proxy\ \"(${proxyProtocolsString// /|})://${proxyUrl}:${proxyPort}\"\;$ ]] ; then
+		if [[ ${line} =~ ^\#Acquire::* ]] ; then
 			AptProxyActive=1
 		fi
 
-	done < $dir_proxyConfFile
+	done < ${dir_proxyConfFile}
 }
 
 isCompanyNetwork () {
@@ -133,7 +126,7 @@ isCompanyNetwork () {
     myIP=$( hostname -I | awk '{print $1}' )
 	myNetwork=$( ip route | grep "src ${myIP}" | head -n 1 | awk -F '/' '{print $1}' )
 
-	info "My network is $myNetwork and the company network is $companyNetwork"
+	info "My network is ${myNetwork} and the company network is ${companyNetwork}"
 
     [[ ${myNetwork} == ${companyNetwork} ]] && amIInCompanyNetwork=0
 
@@ -143,13 +136,13 @@ isCompanyNetwork () {
 isInterfaceUP () { 
 	local status=1
 	local resultOfCat
-	local operationFilePath="$dir_netStat$netInterfaceForProxy/operstate"
+	local operationFilePath="${dir_netStat}${netInterfaceForProxy}/operstate"
 
 	resultOfCat=$( cat ${operationFilePath} )
-	if [ -a $operationFilePath ] && [ -r $operationFilePath ] && [ "${resultOfCat}" == "up" ] || [ "${resultOfCat}" == "UP" ]  ; then
+	if [ -a ${operationFilePath} ] && [ -r ${operationFilePath} ] && [ "${resultOfCat}" == "up" ] || [ "${resultOfCat}" == "UP" ]  ; then
 		status=0
 	fi
-	return $status
+	return ${status}
 }
 
 # Test an IP address for validity.
@@ -169,7 +162,7 @@ isValidIP () {
         stat=$? # Capture the result of the prev condition
 	fi
     
-	return $stat
+	return ${stat}
 }
 
 isPrivateIP () {
@@ -180,40 +173,45 @@ isPrivateIP () {
         stat=$? # Capture the result of the prev condition
     fi
     
-	return $stat
+	return ${stat}
 }
 
 isValidProxy () {
 	local url=$1
 	local stat=1
 
-	if [[ $url =~ ^[a-z0-9]*[a-z0-9]\.[a-z0-9]*[a-z0-9]\.(it|com|eu)$ ]] ; then
+	if [[ ${url} =~ ^[a-z0-9]*[a-z0-9]\.[a-z0-9]*[a-z0-9]\.(it|com|eu)$ ]] ; then
 		stat=$?
 	fi
 
-	return $stat
+	return ${stat}
 }
 
 createDefaultAptConfFile () {
-    touch $dir_proxyConfFile
 	local stat=1
+    
+    # Creates empty apt.conf file in /etc/apt/
+    touch ${dir_proxyConfFile}
 
 	if [ -e $dir_proxyConfFile ] ; then
-		for protocol in ${proxyProtocols[@]} ; do
+
+        for protocol in ${proxyProtocols[@]} ; do
 			if [ ${protocol} == "https" ] ; then
-				echo "#Acquire::$protocol::Proxy "\"http://$proxyUrl:$proxyPort\"\;"" >> $dir_proxyConfFile
+				echo "#Acquire::${protocol}::Proxy "\"http://${proxyUrl}:${proxyPort}\"\;"" >> $dir_proxyConfFile
 			else 
-				echo "#Acquire::$protocol::Proxy "\"$protocol://$proxyUrl:$proxyPort\"\;"" >> $dir_proxyConfFile
+				echo "#Acquire::${protocol}::Proxy "\"${protocol}://${proxyUrl}:${proxyPort}\"\;"" >> $dir_proxyConfFile
 			fi
 		done
+
 		stat=0
-	fi
+	
+    fi
 
 	AptProxyActive=1
-    return $stat
+    return ${stat}
 }
 
-interfaceExists () ( [ -d $dir_netStat$netInterfaceForProxy ] && return 0 || return 1 )
+interfaceExists () ( [ -d ${dir_netStat}${netInterfaceForProxy} ] && return 0 || return 1 )
 
 #== fecho function ==#
 fecho() {
@@ -229,7 +227,7 @@ error() ( fecho ERR "ERROR: ${*}" 1>&2 )
 debug() { [[ ${flagDbg} -ne 0 ]] && fecho DBG "DEBUG: ${*}" 1>&2; }
 
 infotitle() { _txt="-==# ${*} #==-"; _txt2="-==#$( echo " ${*} " | tr '[:print:]' '#' )#==-" ;
-	info "$_txt2"; info "$_txt"; info "$_txt2"; 
+	info "${_txt2}"; info "{$_txt}"; info "{$_txt2}"; 
 }
 
 #== usage functions ==#
@@ -244,17 +242,18 @@ usagefull() ( scriptinfo ful )
 exitFromScript () {
 	local alertType=$1
 	local message=$2
-	case "$alertType" in
-		info )
-			info "$message"
+	case ${alertType} in
+	
+        info )
+			info ${message}
 		;;
-
-		warning )
-			warning "$message"
+	
+        warning )
+			warning ${message}
 		;;
-
-		error )
-			error "$message"
+		
+        error )
+			error ${message}
 		;;
 
 		* )
@@ -476,16 +475,18 @@ isCompanyNetwork ${companyNetwork}
 case $AptProxyActive in
 	0)
 		if (( ${amIInCompanyNetwork} == 0 )) ; then
-			info "proxy already ACTIVATED"
+			printf '\e[36;1mProxy already ACTIVATED\e[0m\n'
 		else
 			deactiveProxy
-		fi
+            [ $? ] && AptProxyActive=1 && printf '\e[37;1mProxy for APT is now disactivated\e[0m\n'
+        fi
 	;;
 	1)
 		if (( ${amIInCompanyNetwork} == 0 )) ; then
-			activeProxy
+            activeProxy
+            [ $? ] && AptProxyActive=0 && printf '\e[37;1mProxy for APT is now activated\e[0m\n'
 		else
-			info "Proxy already DEACTIVATED"
+            printf '\e[36;1mProxy already DEACTIVATED\e[0m\n'
 		fi
 	;;
 	*)
