@@ -22,7 +22,7 @@
 #%
 #================================================================
 #- IMPLEMENTATION
-#-    version         ${SCRIPT_NAME} 0.2.2
+#-    version         ${SCRIPT_NAME} 0.2.3
 #-    author          Andrea Sonic0 Salvatori <andrea.salvatori92@gmail.com>
 #-    license         GPLv3
 #-    script_id       0
@@ -130,7 +130,7 @@ isCompanyNetwork () {
 
     [[ ${myNetwork} == ${companyNetwork} ]] && amIInCompanyNetwork=0
 
-	return $amIInCompanyNetwork
+	return ${amIInCompanyNetworki}
 }
 
 isInterfaceUP () { 
@@ -148,7 +148,7 @@ isInterfaceUP () {
 # Test an IP address for validity.
 # Code by https://www.linuxjournal.com/content/validating-ip-address-bash-script
 isValidIP () {
-    local ip=$1
+    local ip=${1}
     local stat=1
 		
 	# Regex to check if IP is a valid ipv4 address
@@ -166,18 +166,18 @@ isValidIP () {
 }
 
 isPrivateIP () {
-	local ip=$1
+	local ip=${1}
     local stat=1
 		# Regex to check if the IP is in the range of private ip classes
     if [[ $ip =~ ^(192\.168|10\.|172\.1[6-9]\.|172\.2[0-9]\.|172\.3[01]\.) ]] ; then
-        stat=$? # Capture the result of the prev condition
+        stat=$?
     fi
     
 	return ${stat}
 }
 
 isValidProxy () {
-	local url=$1
+	local url=${1}
 	local stat=1
 
 	if [[ ${url} =~ ^[a-z0-9]*[a-z0-9]\.[a-z0-9]*[a-z0-9]\.(it|com|eu)$ ]] ; then
@@ -232,16 +232,16 @@ infotitle() { _txt="-==# ${*} #==-"; _txt2="-==#$( echo " ${*} " | tr '[:print:]
 
 #== usage functions ==#
 scriptinfo() { headFilter="^#-"
-	[[ "$1" = "usg" ]] && headFilter="^#+"
-	[[ "$1" = "ful" ]] && headFilter="^#[%+]"
-	[[ "$1" = "ver" ]] && headFilter="^#-"
+	[[ "${1}" = "usg" ]] && headFilter="^#+"
+	[[ "${1}" = "ful" ]] && headFilter="^#[%+]"
+	[[ "${1}" = "ver" ]] && headFilter="^#-"
 	head -${SCRIPT_HEADSIZE:-99} ${0} | grep -e "${headFilter}" | sed -e "s/${headFilter}//g" -e "s/\${SCRIPT_NAME}/${SCRIPT_NAME}/g"; }
 usage() ( printf "Usage: "; scriptinfo usg )
 usagefull() ( scriptinfo ful )
 
 exitFromScript () {
-	local alertType=$1
-	local message=$2
+	local alertType=${1}
+	local message=${2}
 	case ${alertType} in
 	
         info )
@@ -271,15 +271,15 @@ exitFromScript () {
 #============================
 
 #== general variables ==#
-SCRIPT_NAME=`basename ${0}` # scriptname without path
-SCRIPT_DIR=`cd $(dirname "$0") && pwd` # script directory
+SCRIPT_NAME=$( basename ${0} ) # scriptname without path
+SCRIPT_DIR=$( cd $( dirname "${0}" ) && pwd ) # script directory
 SCRIPT_FULLPATH="${SCRIPT_DIR}/${SCRIPT_NAME}"
 
-SCRIPT_HEADSIZE=$(grep -sn "^# END_OF_HEADER" ${0} | head -1 | cut -f1 -d:)
+SCRIPT_HEADSIZE=$( grep -sn "^# END_OF_HEADER" ${0} | head -1 | cut -f1 -d: )
 
-HOSTNAME="$(hostname)"
+HOSTNAME="$( hostname )"
 FULL_COMMAND="${0} $*"
-EXEC_DATE=$(date "+%y%m%d%H%M%S")
+EXEC_DATE=$( date "+%y%m%d%H%M%S" )
 EXEC_ID=${$}
 
 SCRIPT_TIMELOG_FLAG=0
@@ -290,8 +290,8 @@ netInterfaceForProxy=""
 myIP=""
 myNetwork=""
 companyNetwork=""
-readonly dir_proxyConfFile="/etc/apt/apt.conf" #Tested on Ubuntu18.10
-readonly aptConfFile=$(basename $dir_proxyConfFile)
+readonly dir_proxyConfFile="/etc/apt/apt.conf"
+readonly aptConfFile=$( basename $dir_proxyConfFile )
 readonly dir_netStat="/sys/class/net/"
 proxyUrl=""
 # Change values below based on your proxy setup
@@ -354,13 +354,13 @@ while getopts ${SCRIPT_OPTS} OPTION ; do
 	fi
 
 	#== manage options ==#
-	case "$OPTION" in
+	case "${OPTION}" in
 	    i ) netInterfaceForProxy=$OPTARG
-            info "Interface in wich the proxy must be activated is: $netInterfaceForProxy"
+            info "Interface in wich the proxy must be activated is: ${netInterfaceForProxy}"
         ;;
 
         p )	proxyPort=$OPTARG
-            info "Proxy port is $proxyPort"
+            info "Proxy port is ${proxyPort}"
 		;;
 
 		h ) usagefull
@@ -392,25 +392,25 @@ shift $((${OPTIND} - 1)) ## shift options
 flagMainScriptStart=1
 
 #== Check if I am root ==#
-[ `whoami` != "root" ] && exitFromScript error "Must be root to run ${SCRIPT_NAME}"
+[ $(whoami) != "root" ] && exitFromScript error "Must be root to run ${SCRIPT_NAME}"
 
 #== Check if interface is passed as option and then if it is UP ==#
-if [ -n $netInterfaceForProxy ]; then
+if [ -n ${netInterfaceForProxy} ]; then
 
-    if ! interfaceExists $netInterfaceForProxy || ! isInterfaceUP $netInterfaceForProxy ; then 
-        exitFromScript error "Interface $netInterfaceForProxy is DOWN or do not exists, please check your connectivity"
+    if ! interfaceExists ${netInterfaceForProxy} || ! isInterfaceUP ${netInterfaceForProxy} ; then 
+        exitFromScript error "Interface ${netInterfaceForProxy} is DOWN or do not exists, please check your connectivity"
 	fi
 
 else
-    info "You don't have specified a preferred network interface, $SCRIPT_NAME do not check this option" 
+    info "You don't have specified a preferred network interface, ${SCRIPT_NAME} do not check this option" 
 fi
 
 #==	Check if Network as arg1 is in a right form	==#
 companyNetwork=${1}
 
-if [ -n $companyNetwork ]  && isValidIP "$companyNetwork" ; then
+if [ -n ${companyNetwork} ]  && isValidIP "${companyNetwork}" ; then
 	
-	if ! isPrivateIP "$companyNetwork" ; then
+	if ! isPrivateIP "${companyNetwork}" ; then
 		exitFromScript error "You have not specified a private IP"
 	fi
 
@@ -422,9 +422,9 @@ fi
 proxyUrl=${2}
 
 # Check if URL is not empty
-[ -z $proxyUrl ] && exitFromScript error "You must specify proxy URL"
+[ -z ${proxyUrl} ] && exitFromScript error "You must specify proxy URL"
 
-if isValidProxy "$proxyUrl" ; then
+if isValidProxy "${proxyUrl}" ; then
 	info "Proxy Url is valid"
 else
 	flagOptErr=1
@@ -432,18 +432,18 @@ else
 fi
 
 #== print usage if option error and exit ==#
-[ $flagOptErr -eq 1 ] && exitFromScript
+[ ${flagOptErr} -eq 1 ] && exitFromScript
 
 #== Check if APT configuration file already exist, otherwise creates it ==#
-if [ ! -e $dir_proxyConfFile ] ; then
+if [ ! -e ${dir_proxyConfFile} ] ; then
 	createDefaultAptConfFile
 	info "The APT proxy configuration file does not exist. It has been created to you"
 
 	#== If conf file exist, check if in the right form ==#
-elif [ -s $dir_proxyConfFile ] ; then
+elif [ -s ${dir_proxyConfFile} ] ; then
 
 	# Check if each line in apt.conf contains only one "#"(Hashtag)
-	RemoveUselessHastag && info "Removed useless # for each lines in $dir_proxyConfFile"
+	RemoveUselessHastag && info "Removed useless # for each lines in ${dir_proxyConfFile}"
 
 	isEachLineInCorrectForm
 
@@ -453,10 +453,10 @@ elif [ -s $dir_proxyConfFile ] ; then
 			isProxyActive 
 		;;
 		1)
-			exitFromScript error "One line in $aptConfFile isn't in the right form"
+			exitFromScript error "One line in ${aptConfFile} isn't in the right form"
 		;;
 		2)
-			exitFromScript error "One line in $aptConfFile is different from others" 
+			exitFromScript error "One line in ${aptConfFile} is different from others" 
 		;;
 	esac
 
@@ -472,21 +472,21 @@ info "Proxy to configure is $proxyUrl"
 #==	Check and change my apt proxy status ==#
 isCompanyNetwork ${companyNetwork}
 
-case $AptProxyActive in
+case ${AptProxyActive} in
 	0)
 		if (( ${amIInCompanyNetwork} == 0 )) ; then
-			printf '\e[36;1mProxy already ACTIVATED\e[0m\n'
+			printf '\e[36;1m##== Proxy already ACTIVATED ==##\e[0m\n'
 		else
 			deactiveProxy
-            [ $? ] && AptProxyActive=1 && printf '\e[37;1mProxy for APT is now disactivated\e[0m\n'
+            [ $? ] && AptProxyActive=1 && printf '\e[1;34m#==== Proxy for APT is now Deactivated ====#\e[0m\n'
         fi
 	;;
 	1)
 		if (( ${amIInCompanyNetwork} == 0 )) ; then
             activeProxy
-            [ $? ] && AptProxyActive=0 && printf '\e[37;1mProxy for APT is now activated\e[0m\n'
+            [ $? ] && AptProxyActive=0 && printf '\e[1;34m#==== Proxy for APT is now Activated ====#\e[0m\n'
 		else
-            printf '\e[36;1mProxy already DEACTIVATED\e[0m\n'
+            printf '\e[36;1m##=== Proxy already DEACTIVATED ==##\e[0m\n'
 		fi
 	;;
 	*)
