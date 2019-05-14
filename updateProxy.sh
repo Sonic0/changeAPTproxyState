@@ -385,20 +385,25 @@ while getopts ${SCRIPT_OPTS} OPTION ; do
 done
 shift $((${OPTIND} - 1)) ## shift options
 
+
+
+
 #============================
 #  MAIN SCRIPT
 #============================
 
-flagMainScriptStart=1
+flagMainScriptStart=0
 
 #== Check if I am root ==#
-[ $(whoami) != "root" ] && exitFromScript error "Must be root to run ${SCRIPT_NAME}"
+[ $( whoami ) != "root" ] && exitFromScript error "Must be root to run ${SCRIPT_NAME}"
 
-#== Check if interface is passed as option and then if it is UP ==#
+#== Check if netInterfaceForProxy is present, then the proxy will be activated only if the specified interface is UP ==#
 if [ -n ${netInterfaceForProxy} ]; then
 
-    if ! interfaceExists ${netInterfaceForProxy} || ! isInterfaceUP ${netInterfaceForProxy} ; then 
-        exitFromScript error "Interface ${netInterfaceForProxy} is DOWN or do not exists, please check your connectivity"
+    if ! interfaceExists ${netInterfaceForProxy} ; then # Exit in case of interface do not exist
+        exitFromScript error "Interface ${netInterfaceForProxy} do not exists, please check your interface name"
+    elif ! isInterfaceUP ${netInterfaceForProxy} ; then # If first condition not match, so it checks if interface is UP
+        exitFromScript error "Interface \e[1m${netInterfaceForProxy}\e[0m is \e[1mDOWN\e[0m, please check your connectivity"
 	fi
 
 else
@@ -408,7 +413,7 @@ fi
 #==	Check if Network as arg1 is in a right form	==#
 companyNetwork=${1}
 
-if [ -n ${companyNetwork} ]  && isValidIP "${companyNetwork}" ; then
+if [ -n ${companyNetwork} ]  && isValidIP ${companyNetwork} ; then
 	
 	if ! isPrivateIP "${companyNetwork}" ; then
 		exitFromScript error "You have not specified a private IP"
@@ -494,6 +499,6 @@ case ${AptProxyActive} in
 	;;
 esac
 
-flagMainScriptStart=0
+flagMainScriptStart=1
 
 exit 0
