@@ -45,6 +45,9 @@
 # END_OF_HEADER
 #================================================================
 
+
+
+
 activeProxy () {
     sed -i 's .  ' ${dir_proxyConfFile} # Remove "#" to the beginning of each line
 }
@@ -239,6 +242,7 @@ scriptinfo() { headFilter="^#-"
 usage() ( printf "Usage: "; scriptinfo usg )
 usagefull() ( scriptinfo ful )
 
+#== exit from the script with a defferent level of log ==#
 exitFromScript () {
 	local alertType=${1}
 	local message=${2}
@@ -265,6 +269,9 @@ exitFromScript () {
 	usage 1>&2
 	exit 1
 }
+
+
+
 
 #============================
 #  FILES AND VARIABLES
@@ -386,6 +393,10 @@ done
 shift $((${OPTIND} - 1)) ## shift options
 
 
+#== print usage if option error and exit ==#
+[ ${flagOptErr} -eq 1 ] && exitFromScript
+
+
 
 
 #============================
@@ -393,6 +404,7 @@ shift $((${OPTIND} - 1)) ## shift options
 #============================
 
 flagMainScriptStart=0
+
 
 #== Check if I am root ==#
 [ $( whoami ) != "root" ] && exitFromScript error "Must be root to run ${SCRIPT_NAME}"
@@ -423,21 +435,19 @@ else
 	exitFromScript error "You have specified an invalid IP"
 fi
 
+
 #==	Check if proxyUrl as arg2 is a valid url	==#
 proxyUrl=${2}
 
 # Check if URL is not empty
-[ -z ${proxyUrl} ] && exitFromScript error "You must specify proxy URL"
+[ -z ${proxyUrl} ] && exitFromScript error "You must specify proxy URL" # Since $proxyUrl is empy, then exit
 
 if isValidProxy "${proxyUrl}" ; then
 	info "Proxy Url is valid"
 else
-	flagOptErr=1
 	exitFromScript error "arg proxyUrl is invalid"
 fi
 
-#== print usage if option error and exit ==#
-[ ${flagOptErr} -eq 1 ] && exitFromScript
 
 #== Check if APT configuration file already exist, otherwise creates it ==#
 if [ ! -e ${dir_proxyConfFile} ] ; then
@@ -474,6 +484,7 @@ fi
 info "Your company network is $companyNetwork"
 info "Proxy to configure is $proxyUrl"
 
+
 #==	Check and change my apt proxy status ==#
 isCompanyNetwork ${companyNetwork}
 
@@ -499,6 +510,10 @@ case ${AptProxyActive} in
 	;;
 esac
 
+
 flagMainScriptStart=1
+
+
+
 
 exit 0
