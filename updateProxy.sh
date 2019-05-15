@@ -8,11 +8,12 @@
 #%    You Must execute ${SCRIPT_NAME} with root privileges
 #%
 #% SYNOPSIS
-#+    ${SCRIPT_NAME} [-iphv] companyNetwork proxyUrl
+#+    ${SCRIPT_NAME} [-ipdhv] companyNetwork proxyUrl
 #%
 #% OPTIONS
 #%    -i, --interface		Check if the specified interface is up, then the proxy will change or not
 #%    -p, --port            Set the port of the Proxy. Default port: 8080.
+#%    -d, --debug           Enable debug mode to print more information
 #%    -h, --help            Print this help
 #%    -v, --version         Print script information
 #%
@@ -308,14 +309,14 @@ amIInCompanyNetwork=1
 flagOptErr=0
 flagArgErr=0
 flagMainScriptStart=1
-flagDbg=0
+declare -i flagDbg
 
 #============================
 #  PARSE OPTIONS WITH GETOPTS
 #============================
 
 #== set short options ==#
-SCRIPT_OPTS=':i:phv-:'
+SCRIPT_OPTS='di:p:hv-:' # ':' (a colon) indicates that is required a parameter es. -d -i eth0
 
 #== set long options associated with short one ==#
 typeset -A ARRAY_OPTS
@@ -375,6 +376,9 @@ while getopts ${SCRIPT_OPTS} OPTION ; do
 			exit 0
 		;;
 		
+        d ) flagDbg=0 
+		;;
+
 		: ) error "${SCRIPT_NAME}: -$OPTARG: option requires an argument"
 			flagOptErr=1
 		;;
@@ -442,9 +446,9 @@ proxyUrl=${2}
 [ -z ${proxyUrl} ] && exitFromScript error "You must specify proxy URL" # Since $proxyUrl is empy, then exit
 
 if isValidProxy "${proxyUrl}" ; then
-	info "Proxy Url is valid"
+	[ -s flagDbg ] && info "Proxy Url ${proxyUrl} is valid" # If Debug Option is true then print info
 else
-	exitFromScript error "arg proxyUrl is invalid"
+	exitFromScript error "Arg proxyUrl is invalid"
 fi
 
 
