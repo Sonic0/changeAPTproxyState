@@ -281,9 +281,7 @@ exitFromScript () {
 SCRIPT_NAME=$( basename ${0} ) # scriptname without path
 SCRIPT_DIR=$( cd $( dirname "${0}" ) && pwd ) # script directory
 SCRIPT_FULLPATH="${SCRIPT_DIR}/${SCRIPT_NAME}"
-
 SCRIPT_HEADSIZE=$( grep -sn "^# END_OF_HEADER" ${0} | head -1 | cut -f1 -d: )
-
 HOSTNAME="$( hostname )"
 FULL_COMMAND="${0} $*"
 EXEC_DATE=$( date "+%y%m%d%H%M%S" )
@@ -301,16 +299,15 @@ readonly dir_proxyConfFile="/etc/apt/apt.conf"
 readonly aptConfFile=$( basename $dir_proxyConfFile )
 readonly dir_netStat="/sys/class/net/"
 proxyUrl=""
-# Change values below based on your proxy setup
 proxyProtocols=( http https ftp ) # Default protocols
-proxyPort=8080
+proxyPort=8080 # Default port
 
 #== option variables ==#
 declare -i AptProxyActive
 amIInCompanyNetwork=1
 flagOptErr=0
 flagArgErr=0
-flagMainScriptStart=0
+flagMainScriptStart=1
 flagDbg=0
 
 #============================
@@ -409,6 +406,7 @@ flagMainScriptStart=0
 #== Check if I am root ==#
 [ $( whoami ) != "root" ] && exitFromScript error "Must be root to run ${SCRIPT_NAME}"
 
+
 #== Check if netInterfaceForProxy is present, then the proxy will be activated only if the specified interface is UP ==#
 if [ -n ${netInterfaceForProxy} ]; then
 
@@ -421,6 +419,7 @@ if [ -n ${netInterfaceForProxy} ]; then
 else
     info "You don't have specified a preferred network interface, ${SCRIPT_NAME} do not check this option" 
 fi
+
 
 #==	Check if Network as arg1 is in a right form	==#
 companyNetwork=${1}
