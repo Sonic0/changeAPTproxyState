@@ -130,11 +130,11 @@ isCompanyNetwork () {
     myIP=$( hostname -I | awk '{print $1}' )
 	myNetwork=$( ip route | grep "src ${myIP}" | head -n 1 | awk -F '/' '{print $1}' )
 
-	info "My network is ${myNetwork} and the company network is ${companyNetwork}"
+	[[ flagDbg -eq 0 ]] && info "My network is ${myNetwork} and the company network is ${companyNetwork}"
 
     [[ ${myNetwork} == ${companyNetwork} ]] && amIInCompanyNetwork=0
 
-	return ${amIInCompanyNetworki}
+	return ${amIInCompanyNetwork}
 }
 
 isInterfaceUP () { 
@@ -305,7 +305,7 @@ proxyPort=8080 # Default port
 
 #== option variables ==#
 declare -i AptProxyActive=1
-amIInCompanyNetwork=1
+declare -i amIInCompanyNetwork=1
 flagOptErr=0
 flagArgErr=0
 flagMainScriptStart=1
@@ -494,9 +494,11 @@ fi
 #==	Check and change my apt proxy status ==#
 isCompanyNetwork ${companyNetwork}
 
-case ${AptProxyActive} in
+# If AptProxyActive is 0 then proxy is already activated and now check if i am in company network or not.
+# Based on the variable AptProxyActive, this constructor checks whether to actives or deactives proxy
+case ${AptProxyActive} in 
 	0)
-		if (( ${amIInCompanyNetwork} == 0 )) ; then
+		if [[ ${amIInCompanyNetwork} -eq 0 ]] ; then # If I am in the company network, proxy is already activated
 			printf '\e[36;1m##== Proxy already ACTIVATED ==##\e[0m\n'
 		else
 			deactiveProxy
@@ -504,7 +506,7 @@ case ${AptProxyActive} in
         fi
 	;;
 	1)
-		if (( ${amIInCompanyNetwork} == 0 )) ; then
+		if [[ ${amIInCompanyNetwork} -eq 0 ]] ; then
             activeProxy
             [ $? ] && AptProxyActive=0 && printf '\e[1;34m#==== Proxy for APT is now Activated ====#\e[0m\n'
 		else
