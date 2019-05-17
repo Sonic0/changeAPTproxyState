@@ -304,12 +304,12 @@ proxyProtocols=( http https ftp ) # Default protocols
 proxyPort=8080 # Default port
 
 #== option variables ==#
-declare -i AptProxyActive
+declare -i AptProxyActive=1
 amIInCompanyNetwork=1
 flagOptErr=0
 flagArgErr=0
 flagMainScriptStart=1
-declare -i flagDbg
+declare -i flagDbg=1
 
 #============================
 #  PARSE OPTIONS WITH GETOPTS
@@ -321,6 +321,7 @@ SCRIPT_OPTS='di:p:hv-:' # ':' (a colon) indicates that is required a parameter e
 #== set long options associated with short one ==#
 typeset -A ARRAY_OPTS
 ARRAY_OPTS=(
+    [debug]=d
     [interface]=i
 	[ports]=p
 	[help]=h
@@ -361,11 +362,9 @@ while getopts ${SCRIPT_OPTS} OPTION ; do
 	#== manage options ==#
 	case "${OPTION}" in
 	    i ) netInterfaceForProxy=$OPTARG
-            info "Interface in wich the proxy must be activated is: ${netInterfaceForProxy}"
         ;;
 
         p )	proxyPort=$OPTARG
-            info "Proxy port is ${proxyPort}"
 		;;
 
 		h ) usagefull
@@ -395,7 +394,7 @@ shift $((${OPTIND} - 1)) ## shift options
 
 
 #== print usage if option error and exit ==#
-[ ${flagOptErr} -eq 1 ] && exitFromScript
+[ ${flagOptErr} -eq 1 ] && exit && usage
 
 
 
@@ -428,11 +427,17 @@ fi
 #==	Check if Network as arg1 is in a right form	==#
 companyNetwork=${1}
 
-if [ -n ${companyNetwork} ]  && isValidIP ${companyNetwork} ; then
-	
-	if ! isPrivateIP "${companyNetwork}" ; then
+[ -z ${companyNetwork} ] && exitFromScript "You must specify Network" 
+    
+if isValidIP ${companyNetwork} ; then
+    #   if flagDbg option enabled, then this info will be show	
+    [[ flagDbg -eq 0 ]] && info "${companyNetwork} is a valid IP"
+
+	if isPrivateIP "${companyNetwork}" ; then
+	    [[ flagDbg -eq 0 ]] && info "${companyNetwork} is a private IP"
+    else
 		exitFromScript error "You have not specified a private IP"
-	fi
+    fi
 
 else
 	exitFromScript error "You have specified an invalid IP"
@@ -446,42 +451,43 @@ proxyUrl=${2}
 [ -z ${proxyUrl} ] && exitFromScript error "You must specify proxy URL" # Since $proxyUrl is empy, then exit
 
 if isValidProxy "${proxyUrl}" ; then
-	[ -s flagDbg ] && info "Proxy Url ${proxyUrl} is valid" # If Debug Option is true then print info
+	[[ flagDbg -eq 0 ]] && info "Proxy Url ${proxyUrl} is valid" # If Debug Option is true then print info
 else
 	exitFromScript error "Arg proxyUrl is invalid"
 fi
 
 
 #== Check if APT configuration file already exist, otherwise creates it ==#
-if [ ! -e ${dir_proxyConfFile} ] ; then
-	createDefaultAptConfFile
-	info "The APT proxy configuration file does not exist. It has been created to you"
-
-	#== If conf file exist, check if in the right form ==#
-elif [ -s ${dir_proxyConfFile} ] ; then
+	
+# If conf file exist, check if in the right form
+if [ -s ${dir_proxyConfFile} ] ; then
+    # If Debug Option is true then print AptConfFile exist
+	[[ flagDbg -eq 0 ]] && info "${dir_proxyConfFile} already exist" 
 
 	# Check if each line in apt.conf contains only one "#"(Hashtag)
-	RemoveUselessHastag && info "Removed useless # for each lines in ${dir_proxyConfFile}"
+	RemoveUselessHastag && [[ flagDbg -eq 0 ]] && info "Removed useless # for each lines in ${dir_proxyConfFile}"
 
-	isEachLineInCorrectForm
+        # Check with regex if each line is in a right form
+	    isEachLineInCorrectForm # TODO maybe there is a better syntax form
 
-	case $? in
-		0)	
-			# each line is in right form, so checks if proxy is already active
-			isProxyActive 
-		;;
-		1)
-			exitFromScript error "One line in ${aptConfFile} isn't in the right form"
-		;;
-		2)
-			exitFromScript error "One line in ${aptConfFile} is different from others" 
-		;;
-	esac
+	    case $? in
+		    0)  # each line is in right form, so checks if proxy is already active
+			    isProxyActive 
+		    ;;
 
-else
-	exitFromScript error "Check your apt.conf file"
+		    1)  exitFromScript error "One line in ${aptConfFile} isn't in the right form"
+		    ;;
+
+	    	2)
+			    exitFromScript error "One line in ${aptConfFile} is different from others" 
+		    ;;
+	    esac
+
+else 
+    # Else if the conf file do not exist, creates it
+    createDefaultAptConfFile
+	info "The APT proxy configuration file does not exist. It has been created to you"
 fi
-
 
 #== General info ==#
 info "Your company network is $companyNetwork"
