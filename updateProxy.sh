@@ -426,6 +426,7 @@ fi
 
 #==	Check if Network as arg1 is in a right form	==#
 companyNetwork=${1}
+[[ flagDbg -eq 0 ]] && info "Your company Network is ${companyNetwork}"
 
 [ -z ${companyNetwork} ] && exitFromScript "You must specify Network" 
     
@@ -446,6 +447,7 @@ fi
 
 #==	Check if proxyUrl as arg2 is a valid url	==#
 proxyUrl=${2}
+[[ flagDbg -eq 0 ]] && info "The proxy to configure is ${proxyUrl}"
 
 # Check if URL is not empty
 [ -z ${proxyUrl} ] && exitFromScript error "You must specify proxy URL" # Since $proxyUrl is empy, then exit
@@ -471,8 +473,7 @@ if [ -s ${dir_proxyConfFile} ] ; then
 	    isEachLineInCorrectForm # TODO maybe there is a better syntax form
 
 	    case $? in
-		    0)  # each line is in right form, so checks if proxy is already active
-			    isProxyActive 
+		    0)  isProxyActive # each line is in right form, so checks if proxy is already active
 		    ;;
 
 		    1)  exitFromScript error "One line in ${aptConfFile} isn't in the right form"
@@ -488,10 +489,6 @@ else
     createDefaultAptConfFile
 	info "The APT proxy configuration file does not exist. It has been created to you"
 fi
-
-#== General info ==#
-info "Your company network is $companyNetwork"
-info "Proxy to configure is $proxyUrl"
 
 
 #==	Check and change my apt proxy status ==#
