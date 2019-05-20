@@ -23,7 +23,7 @@
 #%
 #================================================================
 #- IMPLEMENTATION
-#-    version         ${SCRIPT_NAME} 0.2.3
+#-    version         ${SCRIPT_NAME} 0.2.4
 #-    author          Andrea Sonic0 Salvatori <andrea.salvatori92@gmail.com>
 #-    license         GPLv3
 #-    script_id       0
@@ -474,7 +474,7 @@ if [ -s ${dir_proxyConfFile} ] ; then
 	RemoveUselessHastag && [[ flagDbg -eq 0 ]] && info "Removed useless # for each lines in ${dir_proxyConfFile}"
 
     # Check with regex if each line is in a right form
-	isEachLineInCorrectForm # TODO is there a better syntax form ?
+	isEachLineInCorrectForm
     case $? in # Check the return of isEachLineInCorrectForm() 
 	    0)  isProxyActive # each line is in right form, so checks if proxy is already active
 		;;
@@ -487,15 +487,14 @@ if [ -s ${dir_proxyConfFile} ] ; then
 		;;
 	
         *)
-	    	exitFromScript error "Unexpected Error"
+	    	exitFromScript error "Unexpected Error in isEachLineInCorrectForm function"
 	    ;;
-
     esac
 
 else 
     # Else if the conf file do not exist, creates it
     createDefaultAptConfFile
-	info "The APT proxy configuration file does not exist. It has been created to you"
+	info "The APT proxy configuration file does not exist. It has been created for you"
 fi
 
 
@@ -505,16 +504,16 @@ isCompanyNetwork ${companyNetwork}
 # If AptProxyActive is 0 then proxy is already activated and now check if i am in company network or not.
 # Based on the variable AptProxyActive, this constructor checks whether to actives or deactives proxy
 case ${AptProxyActive} in 
-	0)
-		if [[ ${amIInCompanyNetwork} -eq 0 ]] ; then # If I am in the company network, proxy is already activated
-			printf '\e[36;1m##== Proxy already ACTIVATED ==##\e[0m\n'
-		else
-			deactiveProxy
+	0)# If You have apt proxy already active and you are not in the company network, deactives proxy otherwise proxy is already activated
+		if [[ ${amIInCompanyNetwork} -ne 0 ]] ; then 
+            deactiveProxy
             [ $? ] && AptProxyActive=1 && printf '\e[1;34m#==== Proxy for APT is now Deactivated ====#\e[0m\n'
+		else
+			printf '\e[36;1m##== Proxy already ACTIVATED ==##\e[0m\n'
         fi
 	;;
 
-	1)
+	1) # If You have apt proxy deactive and you are in the company network, actives proxy otherwise is already deactivated
 		if [[ ${amIInCompanyNetwork} -eq 0 ]] ; then
             activeProxy
             [ $? ] && AptProxyActive=0 && printf '\e[1;34m#==== Proxy for APT is now Activated ====#\e[0m\n'
@@ -524,7 +523,7 @@ case ${AptProxyActive} in
 	;;
 
 	*)
-		exitFromScript error "Unexpected Error"
+		exitFromScript error "Unexpected Error changing proxy status"
 	;;
 esac
 

@@ -8,7 +8,7 @@
 <div align="center">
   
 [![Bash Shell](https://badges.frapsoft.com/bash/v1/bash.png?v=103)](https://github.com/ellerbrock/open-source-badges/)
-![Version](https://img.shields.io/badge/version-0.2.3--alpha-red.svg)
+![Version](https://img.shields.io/badge/version-0.2.4--alpha-red.svg)
 [![Open Source Love](https://badges.frapsoft.com/os/v1/open-source.png?v=103)](https://github.com/ellerbrock/open-source-badges/)
 
 </div>
