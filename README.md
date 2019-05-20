@@ -30,6 +30,7 @@ You Must execute ./updateProxy with root privileges
  OPTIONS
     -i, --interface       Check if the specified interface is up, then the proxy will change or not
     -p, --port            Set the port of the Proxy. Default port: 8080
+    -d, --debug           Enable debug mode to print more information
     -h, --help            Print this help
     -v, --version         Print script information
 
