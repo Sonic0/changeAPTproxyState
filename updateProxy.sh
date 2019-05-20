@@ -414,9 +414,13 @@ flagMainScriptStart=0
 if [ -n ${netInterfaceForProxy} ]; then
 
     if ! interfaceExists ${netInterfaceForProxy} ; then # Exit in case of interface do not exist
+   
         exitFromScript error "Interface ${netInterfaceForProxy} do not exists, please check your interface name"
+    
     elif ! isInterfaceUP ${netInterfaceForProxy} ; then # If first condition not match, so it checks if interface is UP
+        
         exitFromScript error "Interface \e[1m${netInterfaceForProxy}\e[0m is \e[1mDOWN\e[0m, please check your connectivity"
+
 	fi
 
 else
@@ -469,20 +473,24 @@ if [ -s ${dir_proxyConfFile} ] ; then
 	# Check if each line in apt.conf contains only one "#"(Hashtag)
 	RemoveUselessHastag && [[ flagDbg -eq 0 ]] && info "Removed useless # for each lines in ${dir_proxyConfFile}"
 
-        # Check with regex if each line is in a right form
-	    isEachLineInCorrectForm # TODO maybe there is a better syntax form
+    # Check with regex if each line is in a right form
+	isEachLineInCorrectForm # TODO is there a better syntax form ?
+    case $? in # Check the return of isEachLineInCorrectForm() 
+	    0)  isProxyActive # each line is in right form, so checks if proxy is already active
+		;;
 
-	    case $? in
-		    0)  isProxyActive # each line is in right form, so checks if proxy is already active
-		    ;;
+        1)  exitFromScript error "One line in ${aptConfFile} isn't in the right form"
+		;;
 
-		    1)  exitFromScript error "One line in ${aptConfFile} isn't in the right form"
-		    ;;
+	    2)
+		    exitFromScript error "One line in ${aptConfFile} is different from others" 
+		;;
+	
+        *)
+	    	exitFromScript error "Unexpected Error"
+	    ;;
 
-	    	2)
-			    exitFromScript error "One line in ${aptConfFile} is different from others" 
-		    ;;
-	    esac
+    esac
 
 else 
     # Else if the conf file do not exist, creates it
@@ -505,6 +513,7 @@ case ${AptProxyActive} in
             [ $? ] && AptProxyActive=1 && printf '\e[1;34m#==== Proxy for APT is now Deactivated ====#\e[0m\n'
         fi
 	;;
+
 	1)
 		if [[ ${amIInCompanyNetwork} -eq 0 ]] ; then
             activeProxy
@@ -513,6 +522,7 @@ case ${AptProxyActive} in
             printf '\e[36;1m##=== Proxy already DEACTIVATED ==##\e[0m\n'
 		fi
 	;;
+
 	*)
 		exitFromScript error "Unexpected Error"
 	;;
