@@ -50,11 +50,11 @@
 
 
 activeProxy () {
-    sed -i 's .  ' ${dir_proxyConfFile} # Remove "#" to the beginning of each line
+    sed -i 's .  ' ${dir_proxyConfFile} # Removes "#" to the beginning of each line
 }
 
 deactiveProxy () {
-	sed -i 's/^/#/' ${dir_proxyConfFile} # Add "#" to the beginning of each line
+	sed -i 's/^/#/' ${dir_proxyConfFile} # Adds "#" to the beginning of each line
 }
 
 RemoveUselessHastag () {
@@ -70,6 +70,8 @@ RemoveUselessHastag () {
 
 isEachLineInCorrectForm () {
 	local stat=1
+    # Regex to check if each line in apt.conf file is right
+    local regexToCheckLine="Acquire::(${proxyProtocolsString// /|})::Proxy\ \"(${proxyProtocolsString// /|})://${proxyUrl}:${proxyPort}\"\;"
 	local proxyProtocolsString=${proxyProtocols[@]} # Protocol array in single string to perform sobstitution of " " with "|" for the regex 
 	local beginWithHash=0
 	local beginWithoutHash=0
@@ -78,12 +80,12 @@ isEachLineInCorrectForm () {
 	# Check if each line begins with given pattern, then save it in the array
 	while read -r line ; do
 
-		if [[ ${line} =~ ^Acquire::(${proxyProtocolsString// /|})::Proxy\ \"(${proxyProtocolsString// /|})://${proxyUrl}:${proxyPort}\"\;$ ]] ; then
+		if [[ ${line} =~ ^${regexToCheckLine}$ ]] ; then
 
 			((beginWithoutHash++))
 			stat=0
 		
-		elif [[ ${line} =~ ^\#Acquire::(${proxyProtocolsString// /|})::Proxy\ \"(${proxyProtocolsString// /|})://${proxyUrl}:${proxyPort}\"\;$ ]] ; then
+		elif [[ ${line} =~ ^\#${regexToCheckLine}$ ]] ; then
 			
 			((beginWithHash++))
 			stat=0
@@ -130,7 +132,7 @@ isCompanyNetwork () {
     myIP=$( hostname -I | awk '{print $1}' )
 	myNetwork=$( ip route | grep "src ${myIP}" | head -n 1 | awk -F '/' '{print $1}' )
 
-	[[ flagDbg -eq 0 ]] && info "My network is ${myNetwork} and the company network is ${companyNetwork}"
+	[[ flagDbg -eq 0 ]] && debug "My network is ${myNetwork} and the company network is ${companyNetwork}"
 
     [[ ${myNetwork} == ${companyNetwork} ]] && amIInCompanyNetwork=0
 
@@ -225,10 +227,10 @@ fecho() {
 }
 
 #== error management functions ==#
-info() ( fecho INF "${*}" )
-warning() ( fecho WRN "WARNING: ${*}" 1>&2 )
-error() ( fecho ERR "ERROR: ${*}" 1>&2 )
-debug() { [[ ${flagDbg} -ne 0 ]] && fecho DBG "DEBUG: ${*}" 1>&2; }
+info() ( fecho INF "\e[1;94m${*}\e[0m" )
+warning() ( fecho WRN "\e[1;33mWARNING: ${*}\e[0m" 1>&2 )
+error() ( fecho ERR "\e[1;31mERROR: ${*}\e[0m" 1>&2 )
+debug() { fecho DBG "\e[1;37mDEBUG: ${*}\e[0m" 1>&2; }
 
 infotitle() { _txt="-==# ${*} #==-"; _txt2="-==#$( echo " ${*} " | tr '[:print:]' '#' )#==-" ;
 	info "${_txt2}"; info "{$_txt}"; info "{$_txt2}"; 
@@ -246,7 +248,7 @@ usagefull() ( scriptinfo ful )
 #== exit from the script with a defferent level of log ==#
 exitFromScript () {
 	local alertType=${1}
-	local message=${2}
+	local message=${2} # TODO Use Shift as in fecho
 	case ${alertType} in
 	
         info )
@@ -436,10 +438,10 @@ companyNetwork=${1}
     
 if isValidIP ${companyNetwork} ; then
     #   if flagDbg option enabled, then this info will be show	
-    [[ flagDbg -eq 0 ]] && info "${companyNetwork} is a valid IP"
+    [[ flagDbg -eq 0 ]] && debug "${companyNetwork} is a valid IP"
 
 	if isPrivateIP "${companyNetwork}" ; then
-	    [[ flagDbg -eq 0 ]] && info "${companyNetwork} is a private IP"
+	    [[ flagDbg -eq 0 ]] && debug "${companyNetwork} is a private IP"
     else
 		exitFromScript error "You have not specified a private IP"
     fi
@@ -451,13 +453,13 @@ fi
 
 #==	Check if proxyUrl as arg2 is a valid url	==#
 proxyUrl=${2}
-[[ flagDbg -eq 0 ]] && info "The proxy to configure is ${proxyUrl}"
+[[ flagDbg -eq 0 ]] && debug "The proxy to configure is ${proxyUrl}"
 
 # Check if URL is not empty
 [ -z ${proxyUrl} ] && exitFromScript error "You must specify proxy URL" # Since $proxyUrl is empy, then exit
 
 if isValidProxy "${proxyUrl}" ; then
-	[[ flagDbg -eq 0 ]] && info "Proxy Url ${proxyUrl} is valid" # If Debug Option is true then print info
+	[[ flagDbg -eq 0 ]] && debug "Proxy Url ${proxyUrl} is valid" # If Debug Option is true then print info
 else
 	exitFromScript error "Arg proxyUrl is invalid"
 fi
@@ -468,10 +470,10 @@ fi
 # If conf file exist, check if in the right form
 if [ -s ${dir_proxyConfFile} ] ; then
     # If Debug Option is true then print AptConfFile exist
-	[[ flagDbg -eq 0 ]] && info "${dir_proxyConfFile} already exist" 
+	[[ flagDbg -eq 0 ]] && debug "${dir_proxyConfFile} already exist" 
 
 	# Check if each line in apt.conf contains only one "#"(Hashtag)
-	RemoveUselessHastag && [[ flagDbg -eq 0 ]] && info "Removed useless # for each lines in ${dir_proxyConfFile}"
+	RemoveUselessHastag && [[ flagDbg -eq 0 ]] && debug "Removed useless # for each lines in ${dir_proxyConfFile}"
 
     # Check with regex if each line is in a right form
 	isEachLineInCorrectForm
