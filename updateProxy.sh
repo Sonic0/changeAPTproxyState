@@ -70,22 +70,22 @@ RemoveUselessHastag () {
 
 isEachLineInCorrectForm () {
 	local stat=1
+    local proxyProtocolsString=${proxyProtocols[@]} # Protocol array in single string to perform sobstitution of " " with "|" for the regex 
     # Regex to check if each line in apt.conf file is right
-    local regexToCheckLine="Acquire::(${proxyProtocolsString// /|})::Proxy\ \"(${proxyProtocolsString// /|})://${proxyUrl}:${proxyPort}\"\;"
-	local proxyProtocolsString=${proxyProtocols[@]} # Protocol array in single string to perform sobstitution of " " with "|" for the regex 
+	local regexToCheckLine="Acquire::(${proxyProtocolsString// /|})::Proxy\ \"(${proxyProtocolsString// /|})://${proxyUrl}:${proxyPort}\"\;"
 	local beginWithHash=0
 	local beginWithoutHash=0
 	local lineNumber=$( wc -l $dir_proxyConfFile | awk '{print $1}' )
 
 	# Check if each line begins with given pattern, then save it in the array
 	while read -r line ; do
-
-		if [[ ${line} =~ ^${regexToCheckLine}$ ]] ; then
+           # //\\/ means replace all \ with nothing. Thanks https://unix.stackexchange.com/q/34130
+		if [[ ${line} =~ ^${regexToCheckLine//\\/}$ ]] ; then 
 
 			((beginWithoutHash++))
 			stat=0
 		
-		elif [[ ${line} =~ ^\#${regexToCheckLine}$ ]] ; then
+		elif [[ ${line} =~ ^\#${regexToCheckLine//\\/}$  ]] ; then
 			
 			((beginWithHash++))
 			stat=0
