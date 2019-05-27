@@ -132,7 +132,7 @@ isCompanyNetwork () {
     myIP=$( hostname -I | awk '{print $1}' )
 	myNetwork=$( ip route | grep "src ${myIP}" | head -n 1 | awk -F '/' '{print $1}' )
 
-	[[ flagDbg -eq 0 ]] && debug "My network is ${myNetwork} and the company network is ${companyNetwork}"
+	[[ FLAG_DEBUG -eq 0 ]] && debug "My network is ${myNetwork} and the company network is ${companyNetwork}"
 
     [[ ${myNetwork} == ${companyNetwork} ]] && amIInCompanyNetwork=0
 
@@ -223,7 +223,10 @@ interfaceExists () ( [ -d ${dir_netStat}${netInterfaceForProxy} ] && return 0 ||
 fecho() {
 	_Type=${1} ; shift ;
 	[[ ${SCRIPT_TIMELOG_FLAG:-0} -ne 0 ]] && printf "$( date ${SCRIPT_TIMELOG_FORMAT} ) "
-	printf "[${_Type%[A-Z][A-Z]}] ${*}\n"
+    # If FLAG_DEBUG is 1 and so not equal 0 and _Type == DBG then ... 
+    if [[ ${FLAG_DEBUG:-0} -ne 0 ]] && [[ ${_Type} -eq "DBG" ]] ; then
+        printf "[${_Type%[A-Z][A-Z]}] ${*}\n" # With syntax %[][] will remove the last 2 characters
+    fi
 }
 
 #== error management functions ==#
@@ -290,6 +293,7 @@ FULL_COMMAND="${0} $*"
 EXEC_DATE=$( date "+%y%m%d%H%M%S" )
 EXEC_ID=${$}
 
+FLAG_DEBUG=0 # When enabled will be 1
 SCRIPT_TIMELOG_FLAG=0
 SCRIPT_TIMELOG_FORMAT="+%y/%m/%d@%H:%M:%S"
 
@@ -311,7 +315,6 @@ declare -i amIInCompanyNetwork=1
 flagOptErr=0
 flagArgErr=0
 flagMainScriptStart=1
-declare -i flagDbg=1
 
 #============================
 #  PARSE OPTIONS WITH GETOPTS
@@ -377,7 +380,8 @@ while getopts ${SCRIPT_OPTS} OPTION ; do
 			exit 0
 		;;
 		
-        d ) flagDbg=0 
+        d ) FLAG_DEBUG=1 
+            SCRIPT_TIME_LOG=1
 		;;
 
 		: ) error "${SCRIPT_NAME}: -$OPTARG: option requires an argument"
@@ -432,16 +436,16 @@ fi
 
 #==	Check if Network as arg1 is in a right form	==#
 companyNetwork=${1}
-[[ flagDbg -eq 0 ]] && info "Your company Network is ${companyNetwork}"
-
 [ -z ${companyNetwork} ] && exitFromScript "You must specify Network" 
-    
+
+debug "Your company Network is ${companyNetwork}"
+
 if isValidIP ${companyNetwork} ; then
-    #   if flagDbg option enabled, then this info will be show	
-    [[ flagDbg -eq 0 ]] && debug "${companyNetwork} is a valid IP"
+    #   if FLAG_DEBUG option enabled, then this info will be show	
+    debug "${companyNetwork} is a valid IP"
 
 	if isPrivateIP "${companyNetwork}" ; then
-	    [[ flagDbg -eq 0 ]] && debug "${companyNetwork} is a private IP"
+	    debug "${companyNetwork} is a private IP"
     else
 		exitFromScript error "You have not specified a private IP"
     fi
@@ -453,13 +457,13 @@ fi
 
 #==	Check if proxyUrl as arg2 is a valid url	==#
 proxyUrl=${2}
-[[ flagDbg -eq 0 ]] && debug "The proxy to configure is ${proxyUrl}"
+debug "The proxy to configure is ${proxyUrl}"
 
 # Check if URL is not empty
 [ -z ${proxyUrl} ] && exitFromScript error "You must specify proxy URL" # Since $proxyUrl is empy, then exit
 
 if isValidProxy "${proxyUrl}" ; then
-	[[ flagDbg -eq 0 ]] && debug "Proxy Url ${proxyUrl} is valid" # If Debug Option is true then print info
+	debug "Proxy Url ${proxyUrl} is valid" # If Debug Option is true then print info
 else
 	exitFromScript error "Arg proxyUrl is invalid"
 fi
@@ -470,10 +474,10 @@ fi
 # If conf file exist, check if in the right form
 if [ -s ${dir_proxyConfFile} ] ; then
     # If Debug Option is true then print AptConfFile exist
-	[[ flagDbg -eq 0 ]] && debug "${dir_proxyConfFile} already exist" 
+	debug "${dir_proxyConfFile} already exist" 
 
 	# Check if each line in apt.conf contains only one "#"(Hashtag)
-	RemoveUselessHastag && [[ flagDbg -eq 0 ]] && debug "Removed useless # for each lines in ${dir_proxyConfFile}"
+	RemoveUselessHastag && debug "Removed useless # for each lines in ${dir_proxyConfFile}"
 
     # Check with regex if each line is in a right form
 	isEachLineInCorrectForm
