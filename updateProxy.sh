@@ -225,15 +225,15 @@ fecho() {
 	[[ ${SCRIPT_TIMELOG_FLAG:-0} -ne 0 ]] && printf "$( date ${SCRIPT_TIMELOG_FORMAT} ) "
     # If FLAG_DEBUG is 1 and so not equal 0 and _Type == DBG then ... 
     if [[ ${FLAG_DEBUG:-0} -ne 0 ]] && [[ ${_Type} -eq "DBG" ]] ; then
-        printf "[${_Type%[A-Z][A-Z]}] ${*}\n" # With syntax %[][] will remove the last 2 characters
+        printf "[${_Type}] ${*}\n"
     fi
 }
 
-#== error management functions ==#
+#== error management functions -- fecho in input accepts 2 or more arg ==#
 info() ( fecho INF "\e[1;94m${*}\e[0m" )
-warning() ( fecho WRN "\e[1;33mWARNING: ${*}\e[0m" 1>&2 )
-error() ( fecho ERR "\e[1;31mERROR: ${*}\e[0m" 1>&2 )
-debug() { fecho DBG "\e[1;37mDEBUG: ${*}\e[0m" 1>&2; }
+warning() ( fecho WRN "\e[1;33m${*}\e[0m" 1>&2 )
+error() ( fecho ERR "\e[1;31m${*}\e[0m" 1>&2 )
+debug() ( fecho DBG "\e[1;34m${*}\e[0m" 1>&2 )
 
 infotitle() { _txt="-==# ${*} #==-"; _txt2="-==#$( echo " ${*} " | tr '[:print:]' '#' )#==-" ;
 	info "${_txt2}"; info "{$_txt}"; info "{$_txt2}"; 
@@ -321,12 +321,13 @@ flagMainScriptStart=1
 #============================
 
 #== set short options ==#
-SCRIPT_OPTS='di:p:hv-:' # ':' (a colon) indicates that is required a parameter es. -d -i eth0
+SCRIPT_OPTS='dti:p:hv-:' # ':' (a colon) indicates that is required a parameter es. -d -i eth0
 
 #== set long options associated with short one ==#
 typeset -A ARRAY_OPTS
 ARRAY_OPTS=(
     [debug]=d
+    [timelog]=t
     [interface]=i
 	[ports]=p
 	[help]=h
@@ -380,8 +381,10 @@ while getopts ${SCRIPT_OPTS} OPTION ; do
 			exit 0
 		;;
 		
-        d ) FLAG_DEBUG=1 
-            SCRIPT_TIME_LOG=1
+        d ) FLAG_DEBUG=1
+        ;;
+
+        t ) SCRIPT_TIMELOG_FLAG=1
 		;;
 
 		: ) error "${SCRIPT_NAME}: -$OPTARG: option requires an argument"
