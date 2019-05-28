@@ -8,7 +8,7 @@
 <div align="center">
   
 [![Bash Shell](https://badges.frapsoft.com/bash/v1/bash.png?v=103)](https://github.com/ellerbrock/open-source-badges/)
-![Version](https://img.shields.io/badge/version-0.3--alpha-red.svg)
+![Version](https://img.shields.io/badge/version-0.3.1--alpha-red.svg)
 [![Open Source Love](https://badges.frapsoft.com/os/v1/open-source.png?v=103)](https://github.com/ellerbrock/open-source-badges/)
 
 </div>
@@ -37,8 +37,10 @@ You Must execute ./updateProxy with root privileges
     -v, --version         Print script information
 
  EXAMPLES
-    sudo ./updateProxy 10.11.12.0 proxy.domain.xx
-    sudo ./updateProxy -i enp2s0 10.11.12.0 proxy.domain.xx
+    sudo ${SCRIPT_NAME} proxy.domain.xx
+    sudo ${SCRIPT_NAME} -n 10.11.12.0 proxy.domain.xx
+    sudo ${SCRIPT_NAME} -i enp2s0 -n 10.11.12.0 proxy.domain.xx
+    sudo ${SCRIPT_NAME} -dt proxy.domain.xx
 ```
 
 Shortcuts

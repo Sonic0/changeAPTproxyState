@@ -20,12 +20,14 @@
 #%    -v, --version         Print script information
 #%
 #% EXAMPLES
-#%    sudo ${SCRIPT_NAME} 10.11.12.0 proxy.domain.xx
-#%    sudo ${SCRIPT_NAME} -i enp2s0 10.11.12.0 proxy.domain.xx
+#%    sudo ${SCRIPT_NAME} proxy.domain.xx
+#%    sudo ${SCRIPT_NAME} -n 10.11.12.0 proxy.domain.xx
+#%    sudo ${SCRIPT_NAME} -i enp2s0 -n 10.11.12.0 proxy.domain.xx
+#%    sudo ${SCRIPT_NAME} -dt proxy.domain.xx
 #%
 #================================================================
 #- IMPLEMENTATION
-#-    version         ${SCRIPT_NAME} 0.3
+#-    version         ${SCRIPT_NAME} 0.3.1
 #-    author          Andrea Sonic0 Salvatori <andrea.salvatori92@gmail.com>
 #-    license         GPLv3
 #-    script_id       0
