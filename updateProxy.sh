@@ -12,6 +12,7 @@
 #%
 #% OPTIONS
 #%    -i, --interface		Check if the specified interface is up, then the proxy will change or not
+#%    -n, --network         Network for which to enable the proxy
 #%    -p, --port            Set the port of the Proxy. Default port: 8080.
 #%    -d, --debug           Enable debug mode to print more information
 #%    -t, --timelog         Add timestamp to log ("+%y/%m/%d@%H:%M:%S")
@@ -24,7 +25,7 @@
 #%
 #================================================================
 #- IMPLEMENTATION
-#-    version         ${SCRIPT_NAME} 0.2.4
+#-    version         ${SCRIPT_NAME} 0.3
 #-    author          Andrea Sonic0 Salvatori <andrea.salvatori92@gmail.com>
 #-    license         GPLv3
 #-    script_id       0
@@ -299,10 +300,10 @@ SCRIPT_TIMELOG_FLAG=0
 SCRIPT_TIMELOG_FORMAT="+%y/%m/%d@%H:%M:%S"
 
 #== function variables ==#
-netInterfaceForProxy=""
-myIP=""
-myNetwork=""
-companyNetwork=""
+netInterfaceForProxy=
+myIP=
+myNetwork=
+companyNetwork=
 readonly dir_proxyConfFile="/etc/apt/apt.conf"
 readonly aptConfFile=$( basename $dir_proxyConfFile )
 readonly dir_netStat="/sys/class/net/"
@@ -322,15 +323,16 @@ flagMainScriptStart=1
 #============================
 
 #== set short options ==#
-SCRIPT_OPTS='dti:p:hv-:' # ':' (a colon) indicates that is required a parameter es. -d -i eth0
+SCRIPT_OPTS='i:n:p:dthv-:' # ':' (a colon) indicates that is required a parameter es. -d -i eth0
 
 #== set long options associated with short one ==#
 typeset -A ARRAY_OPTS
 ARRAY_OPTS=(
+    [interface]=i
+    [network]=n
+	[ports]=p
     [debug]=d
     [timelog]=t
-    [interface]=i
-	[ports]=p
 	[help]=h
 	[man]=h
 )
@@ -371,6 +373,9 @@ while getopts ${SCRIPT_OPTS} OPTION ; do
 	    i ) netInterfaceForProxy=$OPTARG
         ;;
 
+        n ) companyNetwork=${OPTARG}
+        ;;
+
         p )	proxyPort=$OPTARG
 		;;
 
@@ -404,7 +409,7 @@ shift $((${OPTIND} - 1)) ## shift options
 
 
 #== print usage if option error and exit ==#
-[ ${flagOptErr} -eq 1 ] && exit && usage
+[ ${flagOptErr} -eq 1 ]  && usage && exit 1
 
 
 
@@ -438,29 +443,29 @@ else
 fi
 
 
-#==	Check if Network as arg1 is in a right form	==#
-companyNetwork=${1}
-[ -z ${companyNetwork} ] && exitFromScript "You must specify Network" 
+#==	If Network as an argument, so this code part checks if is in a right form	==#
 
-debug "Your company Network is ${companyNetwork}"
+if [[ ${companyNetwork} && -n ${companyNetwork} ]] ; then
 
+debug "Your company Network is ${companyNetwork} and will be use to check the match with your actually network"
+    
 if isValidIP ${companyNetwork} ; then
-    #   if FLAG_DEBUG option enabled, then this info will be show	
-    debug "${companyNetwork} is a valid IP"
+        #   if FLAG_DEBUG option enabled, then this info will be show	
+        debug "${companyNetwork} is a valid IP"
 
-	if isPrivateIP "${companyNetwork}" ; then
-	    debug "${companyNetwork} is a private IP"
-    else
-		exitFromScript error "You have not specified a private IP"
+	    if isPrivateIP "${companyNetwork}" ; then
+	        debug "${companyNetwork} is a private IP"
+        else
+	    	exitFromScript error "You have not specified a private IP"
     fi
 
-else
-	exitFromScript error "You have specified an invalid IP"
+    else
+	    exitFromScript error "You have specified an invalid IP"
+    fi
 fi
 
-
 #==	Check if proxyUrl as arg2 is a valid url	==#
-proxyUrl=${2}
+proxyUrl=${1}
 debug "The proxy to configure is ${proxyUrl}"
 
 # Check if URL is not empty

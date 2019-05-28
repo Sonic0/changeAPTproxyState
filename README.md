@@ -8,7 +8,7 @@
 <div align="center">
   
 [![Bash Shell](https://badges.frapsoft.com/bash/v1/bash.png?v=103)](https://github.com/ellerbrock/open-source-badges/)
-![Version](https://img.shields.io/badge/version-0.2.4--alpha-red.svg)
+![Version](https://img.shields.io/badge/version-0.3--alpha-red.svg)
 [![Open Source Love](https://badges.frapsoft.com/os/v1/open-source.png?v=103)](https://github.com/ellerbrock/open-source-badges/)
 
 </div>
@@ -29,6 +29,7 @@ You Must execute ./updateProxy with root privileges
 
  OPTIONS
     -i, --interface       Check if the specified interface is up, then the proxy will change or not
+    -n, --network         Network for which to enable the proxy
     -p, --port            Set the port of the Proxy. Default port: 8080
     -d, --debug           Enable debug mode to print more information
     -t, --timelog         Add timestamp to log ("+%y/%m/%d@%H:%M:%S") 
