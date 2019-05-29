@@ -131,16 +131,16 @@ isProxyActive () {
 }
 
 isCompanyNetwork () {
-	amIInCompanyNetwork=1
+    local stat=1
 
-    myIP=$( hostname -I | awk '{print $1}' )
+    myIP=$( hostname -I | awk '{print $1}' ) # It is necessary to extrapolate my network from ip route command
 	myNetwork=$( ip route | grep "src ${myIP}" | head -n 1 | awk -F '/' '{print $1}' )
 
-	[[ FLAG_DEBUG -eq 0 ]] && debug "My network is ${myNetwork} and the company network is ${companyNetwork}"
+	debug "My network is ${myNetwork} and the company network is ${companyNetwork}"
 
-    [[ ${myNetwork} == ${companyNetwork} ]] && amIInCompanyNetwork=0
+    [[ ${myNetwork} == ${companyNetwork} ]] && stat=0
 
-	return ${amIInCompanyNetwork}
+	return ${stat}
 }
 
 isInterfaceUP () { 
@@ -452,19 +452,24 @@ if [[ ${companyNetwork} && -n ${companyNetwork} ]] ; then
     debug "Your company Network is ${companyNetwork} and will be use to check the match with your actually network"
     
     if isValidIP ${companyNetwork} ; then
-        #   if FLAG_DEBUG option enabled, then this info will be show	
+        # If FLAG_DEBUG option enabled, then this info will be show	
         debug "${companyNetwork} is a valid IP"
-
-	    if isPrivateIP "${companyNetwork}" ; then
-	        debug "${companyNetwork} is a private IP"
-        else
-	        exitFromScript error "You have not specified a private IP"
-        fi
-
     else
-	        exitFromScript error "You have specified an invalid IP"
+	    exitFromScript error "You have specified an invalid IP"
     fi
+
+    if isPrivateIP "${companyNetwork}" ; then
+        debug "${companyNetwork} is a private IP"
+    else
+        exitFromScript error "You have not specified a private IP"
+    fi
+
+#== If companyNetwork is sets, this condition checks if my actual network is equal to companyNetwork
+    isCompanyNetwork ${companyNetwork} && amIInTheComapanyNetwork=0 && debug "I am in the company network" 
+
 fi
+
+
 
 #==	Check if proxyUrl as arg2 is a valid url	==#
 proxyUrl=${1}
@@ -516,8 +521,9 @@ case $? in # Check the return of isEachLineInCorrectForm()
 esac
 
 
+
+
 #==	Check and change my apt proxy status ==#
-isCompanyNetwork ${companyNetwork}
 
 # If AptProxyActive is 0 then proxy is already activated and now check if i am in company network or not.
 # Based on the variable AptProxyActive, this constructor checks whether to actives or deactives proxy
@@ -532,7 +538,7 @@ case ${AptProxyActive} in
 	;;
 
 	1) # If You have apt proxy deactive and you are in the company network, actives proxy otherwise is already deactivated
-		if [[ ${amIInCompanyNetwork} -eq 0 ]] ; then
+		if [[ ! ${amIInCompanyNetwork} || ${amIInCompanyNetwork} -eq 0 ]] ; then
             activeProxy
             [ $? ] && AptProxyActive=0 && printf '\e[1;34m#==== Proxy for APT is now Activated ====#\e[0m\n'
 		else
