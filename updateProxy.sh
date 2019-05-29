@@ -10,6 +10,12 @@
 #% SYNOPSIS
 #+    ${SCRIPT_NAME} [-ipdhv] companyNetwork proxyUrl
 #%
+#% EXAMPLES
+#%    sudo ${SCRIPT_NAME} proxy.domain.xx
+#%    sudo ${SCRIPT_NAME} -n 10.11.12.0 proxy.domain.xx
+#%    sudo ${SCRIPT_NAME} -i enp2s0 -n 10.11.12.0 proxy.domain.xx
+#%    sudo ${SCRIPT_NAME} -dt proxy.domain.xx
+#%
 #% OPTIONS
 #%    -i, --interface		Check if the specified interface is up, then the proxy will change or not
 #%    -n, --network         Network for which to enable the proxy
@@ -18,12 +24,6 @@
 #%    -t, --timelog         Add timestamp to log ("+%y/%m/%d@%H:%M:%S")
 #%    -h, --help            Print this help
 #%    -v, --version         Print script information
-#%
-#% EXAMPLES
-#%    sudo ${SCRIPT_NAME} proxy.domain.xx
-#%    sudo ${SCRIPT_NAME} -n 10.11.12.0 proxy.domain.xx
-#%    sudo ${SCRIPT_NAME} -i enp2s0 -n 10.11.12.0 proxy.domain.xx
-#%    sudo ${SCRIPT_NAME} -dt proxy.domain.xx
 #%
 #================================================================
 #- IMPLEMENTATION
@@ -372,13 +372,13 @@ while getopts ${SCRIPT_OPTS} OPTION ; do
 
 	#== manage options ==#
 	case "${OPTION}" in
-	    i ) netInterfaceForProxy=$OPTARG
+	    i ) netInterfaceForProxy=${OPTARG}
         ;;
 
         n ) companyNetwork=${OPTARG}
         ;;
 
-        p )	proxyPort=$OPTARG
+        p )	proxyPort=${OPTARG}
 		;;
 
 		h ) usagefull
@@ -428,7 +428,7 @@ flagMainScriptStart=0
 
 
 #== Check if netInterfaceForProxy is present, then the proxy will be activated only if the specified interface is UP ==#
-if [ -n ${netInterfaceForProxy} ]; then
+if [ ${netInterfaceForProxy} ]; then
 
     if ! interfaceExists ${netInterfaceForProxy} ; then # Exit in case of interface do not exist
    
@@ -449,20 +449,20 @@ fi
 
 if [[ ${companyNetwork} && -n ${companyNetwork} ]] ; then
 
-debug "Your company Network is ${companyNetwork} and will be use to check the match with your actually network"
+    debug "Your company Network is ${companyNetwork} and will be use to check the match with your actually network"
     
-if isValidIP ${companyNetwork} ; then
+    if isValidIP ${companyNetwork} ; then
         #   if FLAG_DEBUG option enabled, then this info will be show	
         debug "${companyNetwork} is a valid IP"
 
 	    if isPrivateIP "${companyNetwork}" ; then
 	        debug "${companyNetwork} is a private IP"
         else
-	    	exitFromScript error "You have not specified a private IP"
-    fi
+	        exitFromScript error "You have not specified a private IP"
+        fi
 
     else
-	    exitFromScript error "You have specified an invalid IP"
+	        exitFromScript error "You have specified an invalid IP"
     fi
 fi
 
@@ -483,36 +483,37 @@ fi
 #== Check if APT configuration file already exist, otherwise creates it ==#
 	
 # If conf file exist, check if in the right form
-if [ -s ${dir_proxyConfFile} ] ; then
-    # If Debug Option is true then print AptConfFile exist
-	debug "${dir_proxyConfFile} already exist" 
-
-	# Check if each line in apt.conf contains only one "#"(Hashtag)
-	RemoveUselessHastag && debug "Removed useless # for each lines in ${dir_proxyConfFile}"
-
-    # Check with regex if each line is in a right form
-	isEachLineInCorrectForm
-    case $? in # Check the return of isEachLineInCorrectForm() 
-	    0)  isProxyActive # each line is in right form, so checks if proxy is already active
-		;;
-
-        1)  exitFromScript error "One line in ${aptConfFile} isn't in the right form"
-		;;
-
-	    2)
-		    exitFromScript error "One line in ${aptConfFile} is different from others" 
-		;;
-	
-        *)
-	    	exitFromScript error "Unexpected Error in isEachLineInCorrectForm function"
-	    ;;
-    esac
-
-else 
-    # Else if the conf file do not exist, creates it
+if [ ! -s ${dir_proxyConfFile} ] ; then
+    # If the conf file do not exist, creates it
     createDefaultAptConfFile
 	info "The APT proxy configuration file does not exist. It has been created for you"
+else 
+	debug "${dir_proxyConfFile} already exist" 
 fi
+
+
+#== Various Operations in APT conf file ==#
+
+# Check if each line in apt.conf contains only one "#"(Hashtag)
+RemoveUselessHastag && debug "Removed useless # for each lines in ${dir_proxyConfFile}"
+
+# Check with regex if each line is in a right form
+isEachLineInCorrectForm
+case $? in # Check the return of isEachLineInCorrectForm() 
+    0)  isProxyActive # each line is in right form, so checks if proxy is already active
+	;;
+
+    1)  exitFromScript error "One line in ${aptConfFile} isn't in the right form"
+	;;
+
+    2)
+	    exitFromScript error "One line in ${aptConfFile} is different from others" 
+	;;
+
+    *)
+    	exitFromScript error "Unexpected Error in isEachLineInCorrectForm function"
+    ;;
+esac
 
 
 #==	Check and change my apt proxy status ==#
