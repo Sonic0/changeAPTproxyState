@@ -300,6 +300,7 @@ EXEC_ID=${$}
 FLAG_DEBUG=0 # When enabled will be 1
 SCRIPT_TIMELOG_FLAG=0
 SCRIPT_TIMELOG_FORMAT="+%y/%m/%d@%H:%M:%S"
+FLAG_ARG_NETWORK=1 # 1 network not provided, 0 if $companyNetwork is provided
 
 #== function variables ==#
 netInterfaceForProxy=
@@ -314,8 +315,8 @@ proxyProtocols=( http https ftp ) # Default protocols
 proxyPort=8080 # Default port
 
 #== option variables ==#
-declare -i AptProxyActive=1
-declare -i amIInCompanyNetwork=1
+AptProxyActive=1
+amIInCompanyNetwork=1
 flagOptErr=0
 flagArgErr=0
 flagMainScriptStart=1
@@ -376,6 +377,7 @@ while getopts ${SCRIPT_OPTS} OPTION ; do
         ;;
 
         n ) companyNetwork=${OPTARG}
+            FLAG_ARG_NETWORK=0 # 0 because Network is provided as input
         ;;
 
         p )	proxyPort=${OPTARG}
@@ -465,7 +467,7 @@ if [[ ${companyNetwork} && -n ${companyNetwork} ]] ; then
     fi
 
 #== If companyNetwork is sets, this condition checks if my actual network is equal to companyNetwork
-    isCompanyNetwork ${companyNetwork} && amIInTheComapanyNetwork=0 && debug "I am in the company network" 
+    isCompanyNetwork ${companyNetwork} && amIInCompanyNetwork=0 && debug "I am in the company network" 
 
 fi
 
@@ -473,10 +475,10 @@ fi
 
 #==	Check if proxyUrl as arg2 is a valid url	==#
 proxyUrl=${1}
-debug "The proxy to configure is ${proxyUrl}"
 
-# Check if URL is not empty
-[ -z ${proxyUrl} ] && exitFromScript error "You must specify proxy URL" # Since $proxyUrl is empy, then exit
+# Check if URL is not empty otherwise exit
+[ -z ${proxyUrl} ] && exitFromScript error "You must specify proxy URL" || debug "The proxy to configure is ${proxyUrl}"
+
 
 if isValidProxy "${proxyUrl}" ; then
 	debug "Proxy Url ${proxyUrl} is valid" # If Debug Option is true then print info
@@ -529,20 +531,30 @@ esac
 # Based on the variable AptProxyActive, this constructor checks whether to actives or deactives proxy
 case ${AptProxyActive} in 
 	0)# If You have apt proxy already active and you are not in the company network, deactives proxy otherwise proxy is already activated
-		if [[ ${amIInCompanyNetwork} -ne 0 ]] ; then 
+		if [[ ${FLAG_ARG_NETWORK} -eq 1 ]] ; then # amIInCompanyNetwork has zero lenght in case network option is not defined
             deactiveProxy
             [ $? ] && AptProxyActive=1 && printf '\e[1;34m#==== Proxy for APT is now Deactivated ====#\e[0m\n'
 		else
-			printf '\e[36;1m##== Proxy already ACTIVATED ==##\e[0m\n'
+            if [[ ${amIInCompanyNetwork} -eq 0 ]] ; then
+			    printf '\e[36;1m##== Proxy already ACTIVATED ==##\e[0m\n'
+            else
+                activeProxy
+                [ $? ] && AptProxyActive=0 && printf '\e[1;34m#==== Proxy for APT is now Activated 1 ====#\e[0m\n'
+            fi
         fi
 	;;
 
 	1) # If You have apt proxy deactive and you are in the company network, actives proxy otherwise is already deactivated
-		if [[ ! ${amIInCompanyNetwork} || ${amIInCompanyNetwork} -eq 0 ]] ; then
+		if [[ ${FLAG_ARG_NETWORK} -eq 1 ]] ; then
             activeProxy
-            [ $? ] && AptProxyActive=0 && printf '\e[1;34m#==== Proxy for APT is now Activated ====#\e[0m\n'
+            [ $? ] && AptProxyActive=0 && printf '\e[1;34m#==== Proxy for APT is now Activated 2 ====#\e[0m\n'
 		else
-            printf '\e[36;1m##=== Proxy already DEACTIVATED ==##\e[0m\n'
+            if [[ ${amIInCompanyNetwork} -eq 0 ]] ; then
+                activeProxy 
+                [ $? ] && AptProxyActive=0 && printf '\e[1;34m#==== Proxy for APT is now Activated 2 ====#\e[0m\n'
+            else
+                printf '\e[36;1m##=== Proxy already DEACTIVATED ==##\e[0m\n'
+            fi
 		fi
 	;;
 
