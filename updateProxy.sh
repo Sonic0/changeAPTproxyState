@@ -27,7 +27,7 @@
 #%
 #================================================================
 #- IMPLEMENTATION
-#-    version         ${SCRIPT_NAME} 0.4
+#-    version         ${SCRIPT_NAME} 0.4.1
 #-    author          Andrea Sonic0 Salvatori <andrea.salvatori92@gmail.com>
 #-    license         GPLv3
 #-    script_id       0
@@ -538,8 +538,8 @@ case ${AptProxyActive} in
             if [[ ${amIInCompanyNetwork} -eq 0 ]] ; then
 			    printf '\e[36;1m##== Proxy already ACTIVATED ==##\e[0m\n'
             else
-                activeProxy
-                [ $? ] && AptProxyActive=0 && printf '\e[1;34m#==== Proxy for APT is now Activated 1 ====#\e[0m\n'
+                deactiveProxy
+                [ $? ] && AptProxyActive=1 && printf '\e[1;34m#==== Proxy for APT is now Deactivated ====#\e[0m\n'
             fi
         fi
 	;;
