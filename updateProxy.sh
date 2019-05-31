@@ -8,7 +8,7 @@
 #%    You Must execute ${SCRIPT_NAME} with root privileges
 #%
 #% SYNOPSIS
-#+    ${SCRIPT_NAME} [-ipdhv] companyNetwork proxyUrl
+#+    ${SCRIPT_NAME} [ -dhv ] [ -i eth0 ] [ -n 192.168.1.0 ] [ -p 80 ] companyNetwork proxyUrl
 #%
 #% EXAMPLES
 #%    sudo ${SCRIPT_NAME} proxy.domain.xx
@@ -27,7 +27,7 @@
 #%
 #================================================================
 #- IMPLEMENTATION
-#-    version         ${SCRIPT_NAME} 0.3.1
+#-    version         ${SCRIPT_NAME} 0.4
 #-    author          Andrea Sonic0 Salvatori <andrea.salvatori92@gmail.com>
 #-    license         GPLv3
 #-    script_id       0
@@ -36,9 +36,9 @@
 #- This file is under GPLv3. It is distributed "AS IS", WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND
 #-
 #- You are:
-#-   - freedom to use the software for any purpose,
-#-   - freedom to change the software to suit your needs,
-#-   - freedom to share the software with your friends and neighbors, and
+#-   - freedom to use the software for any purpose
+#-   - freedom to change the software to suit your needs
+#-   - freedom to share the software with your friends and neighbors
 #-   - freedom to share the changes you make
 #-
 #================================================================
