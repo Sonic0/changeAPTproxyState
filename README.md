@@ -25,7 +25,7 @@ You Must execute ./updateProxy with root privileges
 
 ```
  SYNOPSIS
-    ./updateProxy [ -dhv ] [ -i eth0 ] [ -n 192.168.1.0 ] [ -p 80 ] companyNetwork proxyUrl
+    ./updateProxy [ -dhv ] [ -i eth0 ] [ -n 192.168.1.0 ] [ -p 80 ] proxyUrl
 
  OPTIONS
     -i, --interface       Check if the specified interface is up, then the proxy will change or not

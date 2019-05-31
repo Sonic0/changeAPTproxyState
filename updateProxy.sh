@@ -8,7 +8,7 @@
 #%    You Must execute ${SCRIPT_NAME} with root privileges
 #%
 #% SYNOPSIS
-#+    ${SCRIPT_NAME} [ -dhv ] [ -i eth0 ] [ -n 192.168.1.0 ] [ -p 80 ] companyNetwork proxyUrl
+#+    ${SCRIPT_NAME} [ -dhv ] [ -i eth0 ] [ -n 192.168.1.0 ] [ -p 80 ] proxyUrl
 #%
 #% EXAMPLES
 #%    sudo ${SCRIPT_NAME} proxy.domain.xx
