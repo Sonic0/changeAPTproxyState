@@ -136,12 +136,14 @@ isCompanyNetwork () {
     myIP=$( hostname -I | awk '{print $1}' ) # It is necessary to extrapolate my network from ip route command
 	myNetwork=$( ip route | grep "src ${myIP}" | head -n 1 | awk -F '/' '{print $1}' )
 
-	debug "My network is ${myNetwork} and the company network is ${proxyNetwork}"
+	debug "Interface ${netInterfaceForProxy} has a network ip ${myNetwork} and the APT proxy network is ${proxyNetwork}"
 
     [[ ${myNetwork} == ${proxyNetwork} ]] && stat=0
 
 	return ${stat}
 }
+
+interfaceExists () ( [ -d ${dir_netStat}${netInterfaceForProxy} ] && return 0 || return 1 )
 
 isInterfaceUP () { 
 	local status=1
@@ -220,8 +222,6 @@ createDefaultAptConfFile () {
 	AptProxyActive=1
     return ${stat}
 }
-
-interfaceExists () ( [ -d ${dir_netStat}${netInterfaceForProxy} ] && return 0 || return 1 )
 
 #== fecho function ==#
 fecho() {
@@ -529,13 +529,13 @@ case ${AptProxyActive} in
 	0)
 		if [[ ${FLAG_ARG_NETWORK} -eq 1 ]] ; then # amIInCompanyNetwork has zero lenght in case network option is not defined
             deactiveProxy
-            [ $? ] && AptProxyActive=1 && printf '\e[1;34m#==== Proxy for APT is now Deactivated ====#\e[0m\n'
+            [ $? ] && AptProxyActive=1 && printf '\e[1;34m#==== Proxy for APT is now DEACTIVATED ====#\e[0m\n'
 		else
             if [[ ${amIInCompanyNetwork} -eq 0 ]] ; then
 			    printf '\e[36;1m##== Proxy already ACTIVATED ==##\e[0m\n'
             else
                 deactiveProxy
-                [ $? ] && AptProxyActive=1 && printf '\e[1;34m#==== Proxy for APT is now Deactivated ====#\e[0m\n'
+                [ $? ] && AptProxyActive=1 && printf '\e[1;34m#==== Proxy for APT is now DEACTIVATED ====#\e[0m\n'
             fi
         fi
 	;;
@@ -544,11 +544,11 @@ case ${AptProxyActive} in
 	1)
 		if [[ ${FLAG_ARG_NETWORK} -eq 1 ]] ; then
             activeProxy
-            [ $? ] && AptProxyActive=0 && printf '\e[1;34m#==== Proxy for APT is now Activated ====#\e[0m\n'
+            [ $? ] && AptProxyActive=0 && printf '\e[1;34m#==== Proxy for APT is now ACTIVATED ====#\e[0m\n'
 		else
             if [[ ${amIInCompanyNetwork} -eq 0 ]] ; then
                 activeProxy 
-                [ $? ] && AptProxyActive=0 && printf '\e[1;34m#==== Proxy for APT is now Activated ====#\e[0m\n'
+                [ $? ] && AptProxyActive=0 && printf '\e[1;34m#==== Proxy for APT is now ACTIVATED ====#\e[0m\n'
             else
                 printf '\e[36;1m##=== Proxy already DEACTIVATED ==##\e[0m\n'
             fi
