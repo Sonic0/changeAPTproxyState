@@ -17,9 +17,9 @@
 #%    sudo ${SCRIPT_NAME} -dt proxy.domain.xx
 #%
 #% OPTIONS
-#%    -i, --interface		Check if the specified interface is up, then the proxy will change or not
-#%    -n, --network         Network for which to enable the proxy
-#%    -p, --port            Set the port of the Proxy. Default port: 8080.
+#%    -i, --interface		This argument will be used to check if interface, in witch the proxy must be activated, is up
+#%    -n, --network         This argument will be compared with your actual network ip
+#%    -p, --port            Set the port of the Proxy. Default port: 8080
 #%    -d, --debug           Enable debug mode to print more information
 #%    -t, --timelog         Add timestamp to log ("+%y/%m/%d@%H:%M:%S")
 #%    -h, --help            Print this help
@@ -27,7 +27,7 @@
 #%
 #================================================================
 #- IMPLEMENTATION
-#-    version         ${SCRIPT_NAME} 0.4.1
+#-    version         ${SCRIPT_NAME} 0.4.2
 #-    author          Andrea Sonic0 Salvatori <andrea.salvatori92@gmail.com>
 #-    license         GPLv3
 #-    script_id       0
@@ -136,9 +136,9 @@ isCompanyNetwork () {
     myIP=$( hostname -I | awk '{print $1}' ) # It is necessary to extrapolate my network from ip route command
 	myNetwork=$( ip route | grep "src ${myIP}" | head -n 1 | awk -F '/' '{print $1}' )
 
-	debug "My network is ${myNetwork} and the company network is ${companyNetwork}"
+	debug "My network is ${myNetwork} and the company network is ${proxyNetwork}"
 
-    [[ ${myNetwork} == ${companyNetwork} ]] && stat=0
+    [[ ${myNetwork} == ${proxyNetwork} ]] && stat=0
 
 	return ${stat}
 }
@@ -297,16 +297,14 @@ FULL_COMMAND="${0} $*"
 EXEC_DATE=$( date "+%y%m%d%H%M%S" )
 EXEC_ID=${$}
 
-FLAG_DEBUG=0 # When enabled will be 1
 SCRIPT_TIMELOG_FLAG=0
 SCRIPT_TIMELOG_FORMAT="+%y/%m/%d@%H:%M:%S"
-FLAG_ARG_NETWORK=1 # 1 network not provided, 0 if $companyNetwork is provided
 
 #== function variables ==#
 netInterfaceForProxy=
 myIP=
 myNetwork=
-companyNetwork=
+proxyNetwork=
 readonly dir_proxyConfFile="/etc/apt/apt.conf"
 readonly aptConfFile=$( basename $dir_proxyConfFile )
 readonly dir_netStat="/sys/class/net/"
@@ -320,6 +318,8 @@ amIInCompanyNetwork=1
 flagOptErr=0
 flagArgErr=0
 flagMainScriptStart=1
+FLAG_DEBUG=0 # When enabled will be 1
+FLAG_ARG_NETWORK=1 # 1 network not provided, 0 if $proxyNetwork is provided
 
 #============================
 #  PARSE OPTIONS WITH GETOPTS
@@ -376,7 +376,7 @@ while getopts ${SCRIPT_OPTS} OPTION ; do
 	    i ) netInterfaceForProxy=${OPTARG}
         ;;
 
-        n ) companyNetwork=${OPTARG}
+        n ) proxyNetwork=${OPTARG}
             FLAG_ARG_NETWORK=0 # 0 because Network is provided as input
         ;;
 
@@ -449,28 +449,27 @@ fi
 
 #==	If Network as an argument, so this code part checks if is in a right form	==#
 
-if [[ ${companyNetwork} && -n ${companyNetwork} ]] ; then
+if [[ ${proxyNetwork} && -n ${proxyNetwork} ]] ; then
 
-    debug "Your company Network is ${companyNetwork} and will be use to check the match with your actually network"
+    debug "Your company Network is ${proxyNetwork} and will be use to check the match with your actually network"
     
-    if isValidIP ${companyNetwork} ; then
+    if isValidIP ${proxyNetwork} ; then
         # If FLAG_DEBUG option enabled, then this info will be show	
-        debug "${companyNetwork} is a valid IP"
+        debug "${proxyNetwork} is a valid IP"
     else
 	    exitFromScript error "You have specified an invalid IP"
     fi
 
-    if isPrivateIP "${companyNetwork}" ; then
-        debug "${companyNetwork} is a private IP"
+    if isPrivateIP "${proxyNetwork}" ; then
+        debug "${proxyNetwork} is a private IP"
     else
         exitFromScript error "You have not specified a private IP"
     fi
 
-#== If companyNetwork is sets, this condition checks if my actual network is equal to companyNetwork
-    isCompanyNetwork ${companyNetwork} && amIInCompanyNetwork=0 && debug "I am in the company network" 
+#== If proxyNetwork is sets, this condition checks if my actual network is equal to proxyNetwork
+    isCompanyNetwork ${proxyNetwork} && amIInCompanyNetwork=0 && debug "I am in the company network" 
 
 fi
-
 
 
 #==	Check if proxyUrl as arg2 is a valid url	==#
@@ -523,14 +522,11 @@ case $? in # Check the return of isEachLineInCorrectForm()
 esac
 
 
-
-
 #==	Check and change my apt proxy status ==#
 
-# If AptProxyActive is 0 then proxy is already activated and now check if i am in company network or not.
-# Based on the variable AptProxyActive, this constructor checks whether to actives or deactives proxy
+# If AptProxyActive is 0 and $FLAG_ARG_NETWORK equal to 1, then proxy will be deactivated. Else if I am in the specified network, proxy is already activated. Otherwise the apt proxy will be deactivated.
 case ${AptProxyActive} in 
-	0)# If You have apt proxy already active and you are not in the company network, deactives proxy otherwise proxy is already activated
+	0)
 		if [[ ${FLAG_ARG_NETWORK} -eq 1 ]] ; then # amIInCompanyNetwork has zero lenght in case network option is not defined
             deactiveProxy
             [ $? ] && AptProxyActive=1 && printf '\e[1;34m#==== Proxy for APT is now Deactivated ====#\e[0m\n'
@@ -544,14 +540,15 @@ case ${AptProxyActive} in
         fi
 	;;
 
-	1) # If You have apt proxy deactive and you are in the company network, actives proxy otherwise is already deactivated
+# If AptProxyActive is 0 and $FLAG_ARG_NETWORK equal to 1, then proxy will be activated. Else if I am in the specified network, proxy will be activated. Otherwise the apt proxy is already deactivated.
+	1)
 		if [[ ${FLAG_ARG_NETWORK} -eq 1 ]] ; then
             activeProxy
-            [ $? ] && AptProxyActive=0 && printf '\e[1;34m#==== Proxy for APT is now Activated 2 ====#\e[0m\n'
+            [ $? ] && AptProxyActive=0 && printf '\e[1;34m#==== Proxy for APT is now Activated ====#\e[0m\n'
 		else
             if [[ ${amIInCompanyNetwork} -eq 0 ]] ; then
                 activeProxy 
-                [ $? ] && AptProxyActive=0 && printf '\e[1;34m#==== Proxy for APT is now Activated 2 ====#\e[0m\n'
+                [ $? ] && AptProxyActive=0 && printf '\e[1;34m#==== Proxy for APT is now Activated ====#\e[0m\n'
             else
                 printf '\e[36;1m##=== Proxy already DEACTIVATED ==##\e[0m\n'
             fi
