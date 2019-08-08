@@ -75,7 +75,8 @@ RemoveUselessHastag () {
 isEachLineInCorrectForm () {
 	local stat=1
     local proxyProtocolsString=${proxyProtocols[@]} # Protocol array in single string to perform sobstitution of " " with "|" for the regex 
-    # Regex to check if each line in apt.conf file is right
+    # Regex to check if each line in apt.conf file is right.
+	# "// /" means replace all "\" with "|"(pipe).
 	local regexToCheckLine="Acquire::(${proxyProtocolsString// /|})::Proxy\ \"(${proxyProtocolsString// /|})://${proxyUrl}:${proxyPort}\"\;"
 	local beginWithHash=0
 	local beginWithoutHash=0
@@ -83,7 +84,7 @@ isEachLineInCorrectForm () {
 
 	# Check if each line begins with given pattern, then save it in the array
 	while read -r line ; do
-           # //\\/ means replace all \ with nothing. Thanks https://unix.stackexchange.com/q/34130
+        	# "//\\/" means replace all "\" with nothing. Thanks https://unix.stackexchange.com/q/34130
 		if [[ ${line} =~ ^${regexToCheckLine//\\/}$ ]] ; then 
 
 			((beginWithoutHash++))
@@ -165,10 +166,10 @@ isValidIP () {
 		
 	# Regex to check if IP is a valid ipv4 address
     if [[ $ip =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]] ; then
-        OIFS=$IFS
-        IFS='.'
-        ip=($ip)
-        IFS=$OIFS
+        OIFS=$IFS 	# Saves default Internal Field Separator " "(whitespace)
+        IFS='.'		# Sets "."(dot) as Internal Field Separator
+        ip=($ip)	# Splits of the $ip in 4 entry and set they into $ip as list
+        IFS=$OIFS	# Resets Internal Field Separator to the default value("" whitespace)
         [[ ${ip[0]} -le 255 && ${ip[1]} -le 255 \
         	&& ${ip[2]} -le 255 && ${ip[3]} -le 255 ]]
         stat=$? # Capture the result of the prev condition
