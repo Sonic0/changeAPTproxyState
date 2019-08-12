@@ -228,8 +228,12 @@ createDefaultAptConfFile () {
 fecho() {
 	_Type=${1} ; shift ;
 	[[ ${SCRIPT_TIMELOG_FLAG:-0} -ne 0 ]] && printf "$( date ${SCRIPT_TIMELOG_FORMAT} ) "
-    # If FLAG_DEBUG is 1 and so not equal 0 and _Type == DBG then ... 
-    if [[ ${FLAG_DEBUG:-0} -ne 0 ]] && [[ ${_Type} -eq "DBG" ]] ; then
+    # If FLAG_DEBUG is 1 and _Type == DBG then prints debug logs 
+    if [[ ${_Type} == "DBG" ]] ; then
+        if [[ ${FLAG_DEBUG:-0} -ne 0 ]] ; then
+            printf "[DBG] ${*}\n"
+        fi
+    else
         printf "[${_Type}] ${*}\n"
     fi
 }
@@ -433,15 +437,13 @@ flagMainScriptStart=0
 #== Check if netInterfaceForProxy is present, then the proxy will be activated only if the specified interface is UP ==#
 if [ ${netInterfaceForProxy} ]; then
 
-    if ! interfaceExists ${netInterfaceForProxy} ; then # Exit in case of interface do not exist
-   
+    if interfaceExists ${netInterfaceForProxy} ; then # Exit in case of interface do not exist
+        if ! isInterfaceUP ${netInterfaceForProxy} ; then # If first condition not match, so it checks if interface is UP
+            exitFromScript info "Interface \e[1m${netInterfaceForProxy}\e[0m is \e[1mDOWN\e[0m, please check your connectivity"
+        fi
+    else
         exitFromScript error "Interface ${netInterfaceForProxy} do not exists, please check your interface name"
-    
-    elif ! isInterfaceUP ${netInterfaceForProxy} ; then # If first condition not match, so it checks if interface is UP
-        
-        exitFromScript error "Interface \e[1m${netInterfaceForProxy}\e[0m is \e[1mDOWN\e[0m, please check your connectivity"
-
-	fi
+    fi
 
 else
     info "You don't have specified a preferred network interface, ${SCRIPT_NAME} do not check this option" 
