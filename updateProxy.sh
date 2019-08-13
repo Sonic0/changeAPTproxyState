@@ -439,7 +439,7 @@ if [ ${netInterfaceForProxy} ]; then
 
     if interfaceExists ${netInterfaceForProxy} ; then # Exit in case of interface do not exist
         if ! isInterfaceUP ${netInterfaceForProxy} ; then # If first condition not match, so it checks if interface is UP
-            exitFromScript info "Interface \e[1m${netInterfaceForProxy}\e[0m is \e[1mDOWN\e[0m, please check your connectivity"
+            exitFromScript error "Interface \e[1m${netInterfaceForProxy}\e[0m is \e[1mDOWN\e[0m, please check your connectivity"
         fi
     else
         exitFromScript error "Interface ${netInterfaceForProxy} do not exists, please check your interface name"
