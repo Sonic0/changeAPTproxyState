@@ -161,21 +161,17 @@ isInterfaceUP () {
 # Test an IP address for validity.
 # Code by https://www.linuxjournal.com/content/validating-ip-address-bash-script
 isValidIP () {
-    local ip=${1}
-    local stat=1
-		
-	# Regex to check if IP is a valid ipv4 address
+    local ip=${1}                                     
+    local stat=1                                      
+    # Regex to check if IP is a valid ipv4 address    
     if [[ $ip =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]] ; then
-        OIFS=$IFS 	# Saves default Internal Field Separator " "(whitespace)
-        IFS='.'		# Sets "."(dot) as Internal Field Separator
-        ip=($ip)	# Splits of the $ip in 4 entry and set they into $ip as list
-        IFS=$OIFS	# Resets Internal Field Separator to the default value("" whitespace)
-        [[ ${ip[0]} -le 255 && ${ip[1]} -le 255 \
-        	&& ${ip[2]} -le 255 && ${ip[3]} -le 255 ]]
+        split ${ip} .                                 
+        ip=${splitted_ip} # splitted_ip is an array declared global inside spli()
+        [[ ${ip[0]} -le 255 && ${ip[1]} -le 255 && ${ip[2]} -le 255 && ${ip[3]} -le 255 ]]
         stat=$? # Capture the result of the prev condition
-	fi
-    
-	return ${stat}
+    fi                                                
+                                                       
+    return ${stat}
 }
 
 isPrivateIP () {
@@ -237,6 +233,13 @@ fecho() {
         printf "[${_Type}] ${*}\n"
     fi
 }
+
+# Usage: split "string" "delimiter"                                                                                                                         
+## Thaks to https://github.com/dylanaraps/pure-bash-bible
+split() { 
+    declare -ga splitted_ip
+    IFS=$'\n' read -d "" -ra splitted_ip <<< "${1//$2/$\n}"
+} 
 
 #== error management functions -- fecho in input accepts 2 or more arg ==#
 info() ( fecho INF "\e[1;94m${*}\e[0m" )
