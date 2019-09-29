@@ -23,11 +23,12 @@
 #%    -d, --debug           Enable debug mode to print more information
 #%    -t, --timelog         Add timestamp to log ("+%y/%m/%d@%H:%M:%S")
 #%    -h, --help            Print this help
+#%    -m, --manual          The same of help
 #%    -v, --version         Print script information
 #%
 #================================================================
 #- IMPLEMENTATION
-#-    version         ${SCRIPT_NAME} 0.4.2
+#-    version         ${SCRIPT_NAME} 0.5.0
 #-    author          Andrea Sonic0 Salvatori <andrea.salvatori92@gmail.com>
 #-    license         GPLv3
 #-    script_id       0
@@ -159,7 +160,6 @@ isInterfaceUP () {
 }
 
 # Test an IP address for validity.
-# Code by https://www.linuxjournal.com/content/validating-ip-address-bash-script
 isValidIP () {
     local ip=${1}                                     
     local stat=1                                      
@@ -345,7 +345,7 @@ ARRAY_OPTS=(
     [debug]=d
     [timelog]=t
 	[help]=h
-	[man]=h
+	[manual]=m
 )
 
 #== parse options ==#
@@ -394,6 +394,10 @@ while getopts ${SCRIPT_OPTS} OPTION ; do
 		h ) usagefull
 			exit 0
 		;;
+
+        m ) usegefull
+            exit 0
+        ;;
 		
 		v ) scriptinfo
 			exit 0
@@ -412,7 +416,8 @@ while getopts ${SCRIPT_OPTS} OPTION ; do
 		? ) error "${SCRIPT_NAME}: -$OPTARG: unknown option"
 			flagOptErr=1
 		;;
-		* ) error "Unknown error while processing options"
+		
+        * ) error "Unknown error while processing options"
         	flagOptErr=1
         ;;
 	esac
@@ -421,7 +426,7 @@ shift $((${OPTIND} - 1)) ## shift options
 
 
 #== print usage if option error and exit ==#
-[ ${flagOptErr} -eq 1 ]  && usage && exit 1
+[[ ${flagOptErr} -eq 1 ]]  && usage && exit 1
 
 
 
